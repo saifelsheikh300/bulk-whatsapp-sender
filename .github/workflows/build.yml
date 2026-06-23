@@ -18,27 +18,32 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.2.1'
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: gradle assembleDebug --no-daemon --stacktrace
+        working-directory: ${{ github.workspace }}
 
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: WaAlTayar-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
 
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
           name: "وتساب الطيار ✈️ v${{ github.run_number }}"
           files: app/build/outputs/apk/debug/app-debug.apk
-          body: "آخر إصدار - قم بتحميل الـ APK مباشرة"
+          body: "حمّل الـ APK من هنا مباشرة"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
