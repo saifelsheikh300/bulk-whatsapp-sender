@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">وتساب الطيار</string>
+    <string name="accessibility_description">يتيح التطبيق إرسال رسائل واتساب تلقائياً</string>
+    <string name="select_contacts">اختر جهات الاتصال</string>
+    <string name="compose_message">اكتب الرسالة</string>
+    <string name="start_sending">ابدأ الإرسال</string>
+    <string name="whatsapp_normal">واتساب عادي</string>
+    <string name="whatsapp_business">واتساب بيزنس</string>
+    <string name="select_all">تحديد الكل</string>
+    <string name="deselect_all">إلغاء التحديد</string>
+    <string name="sending_progress">جاري الإرسال</string>
+    <string name="delay_info">تأخير 10 ثواني بين كل رسالة لتجنب الحظر</string>
+    <string name="enable_accessibility">تفعيل خدمة الإمكانية</string>
+    <string name="accessibility_not_enabled">يجب تفعيل خدمة الإمكانية أولاً</string>
+    <string name="contacts_selected">جهة اتصال محددة</string>
+    <string name="search_contacts">ابحث عن جهة اتصال...</string>
+    <string name="message_hint">اكتب رسالتك هنا...</string>
+    <string name="stop_sending">إيقاف الإرسال</string>
+    <string name="sent">تم الإرسال</string>
+    <string name="failed">فشل</string>
+    <string name="pending">في الانتظار</string>
+</resources>

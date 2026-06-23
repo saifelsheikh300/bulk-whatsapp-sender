@@ -1,0 +1,15 @@
+<resources>
+    <color name="green_primary">#25D366</color>
+    <color name="green_dark">#128C7E</color>
+    <color name="green_light">#DCF8C6</color>
+    <color name="bg_dark">#0B141A</color>
+    <color name="bg_card">#1F2C34</color>
+    <color name="bg_input">#2A3942</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#8696A0</color>
+    <color name="divider">#2A3942</color>
+    <color name="red_error">#FF4444</color>
+    <color name="orange_warning">#FFA500</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>
