@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import androidx.appcompat.app.AppCompatActivity
@@ -42,12 +43,17 @@ class ProgressActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        registerReceiver(progressReceiver, IntentFilter(WhatsAppAccessibilityService.ACTION_UPDATE_PROGRESS))
+        val filter = IntentFilter(WhatsAppAccessibilityService.ACTION_UPDATE_PROGRESS)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(progressReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(progressReceiver, filter)
+        }
     }
 
     override fun onPause() {
         super.onPause()
-        unregisterReceiver(progressReceiver)
+        try { unregisterReceiver(progressReceiver) } catch (e: Exception) {}
     }
 
     private fun updateUI() {
