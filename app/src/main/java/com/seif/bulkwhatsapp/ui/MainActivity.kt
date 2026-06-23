@@ -3,6 +3,7 @@ package com.seif.bulkwhatsapp.ui
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Bundle
 import android.provider.Settings
 import android.text.Editable
@@ -12,6 +13,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.seif.bulkwhatsapp.R
 import com.seif.bulkwhatsapp.data.SessionManager
 import com.seif.bulkwhatsapp.databinding.ActivityMainBinding
 import com.seif.bulkwhatsapp.service.WhatsAppAccessibilityService
@@ -48,11 +50,11 @@ class MainActivity : AppCompatActivity() {
         val enabled = isAccessibilityEnabled()
         if (enabled) {
             binding.tvAccessibilityStatus.text = "مفعّلة ✓"
-            binding.tvAccessibilityStatus.setTextColor(ContextCompat.getColor(this, com.seif.bulkwhatsapp.R.color.green_primary))
+            binding.tvAccessibilityStatus.setTextColor(ContextCompat.getColor(this, R.color.green_primary))
             binding.btnEnableAccessibility.visibility = View.GONE
         } else {
             binding.tvAccessibilityStatus.text = "غير مفعّلة - اضغط لتفعيلها"
-            binding.tvAccessibilityStatus.setTextColor(ContextCompat.getColor(this, com.seif.bulkwhatsapp.R.color.red_error))
+            binding.tvAccessibilityStatus.setTextColor(ContextCompat.getColor(this, R.color.red_error))
             binding.btnEnableAccessibility.visibility = View.VISIBLE
         }
         binding.btnEnableAccessibility.setOnClickListener {
@@ -79,10 +81,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateWhatsAppSelection() {
-        val green = ContextCompat.getColor(this, com.seif.bulkwhatsapp.R.color.green_primary)
-        val card = ContextCompat.getColor(this, com.seif.bulkwhatsapp.R.color.bg_input)
-        binding.btnWhatsAppNormal.setBackgroundColor(if (!useWhatsAppBusiness) green else card)
-        binding.btnWhatsAppBusiness.setBackgroundColor(if (useWhatsAppBusiness) green else card)
+        val selectedColor = ContextCompat.getColor(this, R.color.green_primary)
+        val unselectedColor = ContextCompat.getColor(this, R.color.bg_input)
+        binding.btnWhatsAppNormal.setBackgroundColor(if (!useWhatsAppBusiness) selectedColor else unselectedColor)
+        binding.btnWhatsAppBusiness.setBackgroundColor(if (useWhatsAppBusiness) selectedColor else unselectedColor)
     }
 
     private fun setupContactsCard() {
@@ -127,8 +129,7 @@ class MainActivity : AppCompatActivity() {
         SessionManager.currentSession = com.seif.bulkwhatsapp.data.SendSession(contacts, message, useWhatsAppBusiness)
         SessionManager.currentIndex = 0
         SessionManager.isRunning = true
-        val intent = Intent(this, ProgressActivity::class.java)
-        startActivity(intent)
+        startActivity(Intent(this, ProgressActivity::class.java))
         WhatsAppAccessibilityService.instance?.sendNextMessage()
     }
 
