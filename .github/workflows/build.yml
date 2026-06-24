@@ -27,35 +27,12 @@ jobs:
         with:
           gradle-version: '8.2.1'
 
-      - name: Show project structure
-        run: |
-          echo "=== Root files ==="
-          ls -la
-          echo "=== app/src/main ==="
-          find app/src/main -name "*.kt" | head -20
-          echo "=== Gradle files ==="
-          cat settings.gradle
-          cat build.gradle
-          cat app/build.gradle
-
       - name: Build Debug APK
-        run: gradle assembleDebug --no-daemon --info 2>&1 | tail -100
+        run: gradle assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
-        if: success()
         with:
           name: WaAlTayar-APK
           path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 7
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        if: success()
-        with:
-          tag_name: v${{ github.run_number }}
-          name: "وتساب الطيار ✈️ v${{ github.run_number }}"
-          files: app/build/outputs/apk/debug/app-debug.apk
-          body: "حمّل الـ APK من هنا مباشرة"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          retention-days: 30
