@@ -6,18 +6,16 @@
     android:orientation="vertical"
     android:padding="12dp"
     android:gravity="center"
-    android:minWidth="80dp"
-    android:elevation="8dp">
+    android:minWidth="80dp">
 
     <TextView
         android:id="@+id/tvBubbleStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="✈️ يُرسل"
+        android:text="يرسل"
         android:textColor="#FFFFFF"
         android:textSize="11sp"
         android:textStyle="bold"
-        android:fontFamily="@font/cairo"
         android:layout_marginBottom="4dp" />
 
     <LinearLayout
@@ -32,13 +30,14 @@
             android:orientation="vertical"
             android:gravity="center"
             android:layout_marginEnd="8dp">
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="أُرسل"
+                android:text="ارسل"
                 android:textColor="#A0A0A0"
-                android:textSize="9sp"
-                android:fontFamily="@font/cairo" />
+                android:textSize="9sp" />
+
             <TextView
                 android:id="@+id/tvBubbleSent"
                 android:layout_width="wrap_content"
@@ -46,8 +45,8 @@
                 android:text="0"
                 android:textColor="#25D366"
                 android:textSize="18sp"
-                android:textStyle="bold"
-                android:fontFamily="@font/cairo" />
+                android:textStyle="bold" />
+
         </LinearLayout>
 
         <View
@@ -61,13 +60,14 @@
             android:orientation="vertical"
             android:gravity="center"
             android:layout_marginStart="8dp">
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="متبقي"
                 android:textColor="#A0A0A0"
-                android:textSize="9sp"
-                android:fontFamily="@font/cairo" />
+                android:textSize="9sp" />
+
             <TextView
                 android:id="@+id/tvBubbleRemaining"
                 android:layout_width="wrap_content"
@@ -75,8 +75,10 @@
                 android:text="0"
                 android:textColor="#FFA500"
                 android:textSize="18sp"
-                android:textStyle="bold"
-                android:fontFamily="@font/cairo" />
+                android:textStyle="bold" />
+
         </LinearLayout>
+
     </LinearLayout>
+
 </LinearLayout>

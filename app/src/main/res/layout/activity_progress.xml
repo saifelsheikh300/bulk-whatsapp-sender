@@ -6,7 +6,6 @@
     android:orientation="vertical"
     android:layoutDirection="rtl">
 
-    <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="64dp"
@@ -17,11 +16,10 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="جاري الإرسال ✈️"
+            android:text="جاري الارسال"
             android:textColor="@color/text_primary"
             android:textSize="20sp"
-            android:textStyle="bold"
-            android:fontFamily="@font/cairo" />
+            android:textStyle="bold" />
     </LinearLayout>
 
     <LinearLayout
@@ -31,7 +29,6 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Stats Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -56,15 +53,13 @@
                         android:text="0"
                         android:textColor="@color/green_primary"
                         android:textSize="32sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/cairo" />
+                        android:textStyle="bold" />
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="تم الإرسال"
+                        android:text="تم الارسال"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp"
-                        android:fontFamily="@font/cairo" />
+                        android:textSize="12sp" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -86,20 +81,17 @@
                         android:text="0"
                         android:textColor="@color/orange_warning"
                         android:textSize="32sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/cairo" />
+                        android:textStyle="bold" />
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="متبقي"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp"
-                        android:fontFamily="@font/cairo" />
+                        android:textSize="12sp" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
         </LinearLayout>
 
-        <!-- Progress Bar Card -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -110,7 +102,6 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:padding="16dp">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -122,8 +113,7 @@
                         android:layout_weight="1"
                         android:text="التقدم"
                         android:textColor="@color/text_secondary"
-                        android:textSize="13sp"
-                        android:fontFamily="@font/cairo" />
+                        android:textSize="13sp" />
                     <TextView
                         android:id="@+id/tvProgressPercent"
                         android:layout_width="wrap_content"
@@ -131,33 +121,26 @@
                         android:text="0%"
                         android:textColor="@color/green_primary"
                         android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/cairo" />
+                        android:textStyle="bold" />
                 </LinearLayout>
-
                 <ProgressBar
                     android:id="@+id/progressBar"
                     style="@android:style/Widget.ProgressBar.Horizontal"
                     android:layout_width="match_parent"
                     android:layout_height="10dp"
                     android:max="100"
-                    android:progress="0"
-                    android:progressTint="@color/green_primary"
-                    android:progressBackgroundTint="@color/bg_input" />
-
+                    android:progress="0" />
                 <TextView
                     android:id="@+id/tvCurrentContact"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="جاري الإرسال إلى: ..."
+                    android:text="جاري الارسال الى ..."
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp"
-                    android:fontFamily="@font/cairo"
                     android:layout_marginTop="10dp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Countdown Card -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -180,8 +163,7 @@
                     android:layout_weight="1"
                     android:text="الرسالة التالية بعد:"
                     android:textColor="@color/text_secondary"
-                    android:textSize="14sp"
-                    android:fontFamily="@font/cairo" />
+                    android:textSize="14sp" />
                 <TextView
                     android:id="@+id/tvCountdown"
                     android:layout_width="wrap_content"
@@ -189,14 +171,12 @@
                     android:text="10 ث"
                     android:textColor="@color/green_primary"
                     android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:fontFamily="@font/cairo" />
+                    android:textStyle="bold" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
     </LinearLayout>
 
-    <!-- Bottom Buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -208,10 +188,9 @@
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:layout_marginBottom="10dp"
-            android:text="⏸ إيقاف مؤقت"
+            android:text="ايقاف مؤقت"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:fontFamily="@font/cairo"
             android:backgroundTint="@color/orange_warning"
             style="@style/GreenButton" />
 
@@ -219,12 +198,12 @@
             android:id="@+id/btnStop"
             android:layout_width="match_parent"
             android:layout_height="52dp"
-            android:text="⏹ إيقاف نهائي"
+            android:text="ايقاف نهائي"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:fontFamily="@font/cairo"
             android:backgroundTint="@color/red_error"
             style="@style/GreenButton" />
+
     </LinearLayout>
 
 </LinearLayout>
