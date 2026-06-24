@@ -3,17 +3,18 @@ package com.seif.bulkwhatsapp.ui
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.os.Bundle
 import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
+import android.widget.SeekBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.seif.bulkwhatsapp.R
+import com.seif.bulkwhatsapp.data.SendSession
 import com.seif.bulkwhatsapp.data.SessionManager
 import com.seif.bulkwhatsapp.databinding.ActivityMainBinding
 import com.seif.bulkwhatsapp.service.WhatsAppAccessibilityService
@@ -22,6 +23,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private var useWhatsAppBusiness = false
+    private var selectedDelay = 10 // default 10 seconds
 
     companion object {
         const val REQUEST_CONTACTS = 100
@@ -36,6 +38,7 @@ class MainActivity : AppCompatActivity() {
         setupWhatsAppSelector()
         setupContactsCard()
         setupMessageInput()
+        setupDelaySlider()
         setupStartButton()
         checkContactsPermission()
     }
@@ -112,6 +115,28 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    private fun setupDelaySlider() {
+        // SeekBar: 0=5s, 25=30s → value = progress + 5
+        binding.seekBarDelay.progress = 5 // default = 10s
+        binding.tvDelayValue.text = "10 ثانية"
+
+        binding.seekBarDelay.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                selectedDelay = progress + 5
+                binding.tvDelayValue.text = "$selectedDelay ثانية"
+
+                // Warning color if < 7s
+                val color = if (selectedDelay < 7)
+                    ContextCompat.getColor(this@MainActivity, R.color.red_error)
+                else
+                    ContextCompat.getColor(this@MainActivity, R.color.green_primary)
+                binding.tvDelayValue.setTextColor(color)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+    }
+
     private fun setupStartButton() {
         binding.btnStart.setOnClickListener {
             val message = binding.etMessage.text.toString().trim()
@@ -126,7 +151,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun startSending(message: String) {
         val contacts = selectedContacts.map { it.copy() }
-        SessionManager.currentSession = com.seif.bulkwhatsapp.data.SendSession(contacts, message, useWhatsAppBusiness)
+        SessionManager.currentSession = SendSession(contacts, message, useWhatsAppBusiness, selectedDelay)
         SessionManager.currentIndex = 0
         SessionManager.isRunning = true
         startActivity(Intent(this, ProgressActivity::class.java))

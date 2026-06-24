@@ -47,6 +47,7 @@ class ProgressActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(progressReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
             registerReceiver(progressReceiver, filter)
         }
     }
@@ -73,7 +74,8 @@ class ProgressActivity : AppCompatActivity() {
 
     private fun startCountdown() {
         countdownTimer?.cancel()
-        countdownTimer = object : CountDownTimer(10000, 1000) {
+        val delayMs = (SessionManager.currentSession?.delaySeconds ?: 10) * 1000L
+        countdownTimer = object : CountDownTimer(delayMs, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 binding.tvCountdown.text = "${millisUntilFinished / 1000} ث"
             }
@@ -85,7 +87,7 @@ class ProgressActivity : AppCompatActivity() {
 
     private fun onFinished() {
         countdownTimer?.cancel()
-        binding.tvCurrentContact.text = "تم الإرسال بنجاح ✓"
+        binding.tvCurrentContact.text = "✅ تم الإرسال بنجاح"
         binding.tvCountdown.text = "انتهى"
         binding.btnStop.text = "العودة للرئيسية"
     }
