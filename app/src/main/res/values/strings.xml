@@ -19,4 +19,6 @@
     <string name="sent">تم الإرسال</string>
     <string name="failed">فشل</string>
     <string name="pending">في الانتظار</string>
+    <string name="enable_overlay">تفعيل النافذة العائمة</string>
+    <string name="overlay_enabled">النافذة العائمة مفعلة</string>
 </resources>

@@ -141,17 +141,20 @@ class MainActivity : AppCompatActivity() {
         SessionManager.isRunning = true
         SessionManager.isPaused = false
 
-        // Start floating bubble if overlay permission granted
+        // Start floating bubble only if overlay permission granted
         if (Settings.canDrawOverlays(this)) {
             startService(Intent(this, FloatingBubbleService::class.java))
-        } else {
-            // Request overlay permission
-            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
-            startActivity(intent)
         }
-
+        // Always go to progress screen regardless
         startActivity(Intent(this, ProgressActivity::class.java))
         WhatsAppAccessibilityService.instance?.sendNextMessage()
+    }
+
+    private fun requestOverlayPermission() {
+        if (!Settings.canDrawOverlays(this)) {
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+            startActivityForResult(intent, 200)
+        }
     }
 
     private fun checkContactsPermission() {
