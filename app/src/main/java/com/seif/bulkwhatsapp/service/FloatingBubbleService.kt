@@ -7,7 +7,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.PixelFormat
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -25,6 +27,17 @@ class FloatingBubbleService : Service() {
     private var params: WindowManager.LayoutParams? = null
     private var isDragging = false
 
+    // Auto-refresh handler in case broadcast missed
+    private val refreshHandler = Handler(Looper.getMainLooper())
+    private val refreshRunnable = object : Runnable {
+        override fun run() {
+            updateBubble(false)
+            if (SessionManager.isRunning) {
+                refreshHandler.postDelayed(this, 1000)
+            }
+        }
+    }
+
     private val progressReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val finished = intent?.getBooleanExtra("finished", false) ?: false
@@ -38,6 +51,7 @@ class FloatingBubbleService : Service() {
         super.onCreate()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         createBubble()
+
         val filter = IntentFilter(WhatsAppAccessibilityService.ACTION_UPDATE_PROGRESS)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(progressReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
@@ -45,6 +59,9 @@ class FloatingBubbleService : Service() {
             @Suppress("UnspecifiedRegisterReceiverFlag")
             registerReceiver(progressReceiver, filter)
         }
+
+        // Start auto-refresh every second
+        refreshHandler.postDelayed(refreshRunnable, 1000)
     }
 
     private fun createBubble() {
@@ -64,7 +81,8 @@ class FloatingBubbleService : Service() {
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.END
-            x = 16; y = 200
+            x = 16
+            y = 300
         }
 
         setupDragAndClick()
@@ -80,15 +98,17 @@ class FloatingBubbleService : Service() {
         bubbleView?.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    initialX = params!!.x; initialY = params!!.y
-                    touchX = event.rawX; touchY = event.rawY
+                    initialX = params!!.x
+                    initialY = params!!.y
+                    touchX = event.rawX
+                    touchY = event.rawY
                     isDragging = false
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val dx = (touchX - event.rawX).toInt()
                     val dy = (event.rawY - touchY).toInt()
-                    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) isDragging = true
+                    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) isDragging = true
                     params!!.x = initialX + dx
                     params!!.y = initialY + dy
                     windowManager.updateViewLayout(bubbleView, params)
@@ -128,26 +148,37 @@ class FloatingBubbleService : Service() {
 
     private fun updateBubble(finished: Boolean) {
         val view = bubbleView ?: return
-        view.findViewById<TextView>(R.id.tvBubbleSent)?.text = "${SessionManager.sentCount}"
-        view.findViewById<TextView>(R.id.tvBubbleRemaining)?.text = "${SessionManager.remainingCount}"
+
+        // Read directly from SessionManager - always accurate
+        val sent = SessionManager.sentCount
+        val remaining = SessionManager.remainingCount
+
+        view.findViewById<TextView>(R.id.tvBubbleSent)?.text = sent.toString()
+        view.findViewById<TextView>(R.id.tvBubbleRemaining)?.text = remaining.toString()
         view.findViewById<TextView>(R.id.tvBubbleStatus)?.text = when {
             finished -> "انتهى"
             SessionManager.isPaused -> "موقوف"
             else -> "يرسل"
         }
+
         val btnPause = view.findViewById<ImageButton>(R.id.btnBubblePause)
         btnPause?.setImageResource(
             if (SessionManager.isPaused) android.R.drawable.ic_media_play
             else android.R.drawable.ic_media_pause
         )
+
         if (finished) {
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ stopSelf() }, 3000)
+            refreshHandler.removeCallbacks(refreshRunnable)
+            Handler(Looper.getMainLooper()).postDelayed({ stopSelf() }, 3000)
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        refreshHandler.removeCallbacks(refreshRunnable)
         try { unregisterReceiver(progressReceiver) } catch (e: Exception) {}
-        bubbleView?.let { try { windowManager.removeView(it) } catch (e: Exception) {} }
+        bubbleView?.let {
+            try { windowManager.removeView(it) } catch (e: Exception) {}
+        }
     }
 }
