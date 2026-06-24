@@ -8,6 +8,8 @@ import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import com.seif.bulkwhatsapp.R
 import com.seif.bulkwhatsapp.data.SendStatus
 import com.seif.bulkwhatsapp.data.SessionManager
 import com.seif.bulkwhatsapp.databinding.ActivityProgressBinding
@@ -17,13 +19,22 @@ class ProgressActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityProgressBinding
     private var countdownTimer: CountDownTimer? = null
+    private var isFinished = false
 
     private val progressReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val finished = intent?.getBooleanExtra("finished", false) ?: false
-            updateUI()
-            if (!finished && SessionManager.isRunning) startCountdown()
-            else if (finished) onFinished()
+            if (finished) {
+                isFinished = true
+                onFinished()
+            } else {
+                updateUI()
+                if (!SessionManager.isPaused) startCountdown()
+                else {
+                    countdownTimer?.cancel()
+                    binding.tvCountdown.text = "موقوف"
+                }
+            }
         }
     }
 
@@ -32,17 +43,33 @@ class ProgressActivity : AppCompatActivity() {
         binding = ActivityProgressBinding.inflate(layoutInflater)
         setContentView(binding.root)
         updateUI()
-        startCountdown()
+        if (!SessionManager.isPaused) startCountdown()
+
+        binding.btnPauseResume.setOnClickListener {
+            val service = WhatsAppAccessibilityService.instance
+            if (SessionManager.isPaused) {
+                service?.resume()
+                updatePauseButton()
+                startCountdown()
+            } else {
+                service?.pause()
+                countdownTimer?.cancel()
+                binding.tvCountdown.text = "موقوف ⏸"
+                updatePauseButton()
+            }
+        }
 
         binding.btnStop.setOnClickListener {
-            SessionManager.isRunning = false
             countdownTimer?.cancel()
+            WhatsAppAccessibilityService.instance?.stop()
             finish()
         }
     }
 
     override fun onResume() {
         super.onResume()
+        updateUI()
+        updatePauseButton()
         val filter = IntentFilter(WhatsAppAccessibilityService.ACTION_UPDATE_PROGRESS)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(progressReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
@@ -58,18 +85,33 @@ class ProgressActivity : AppCompatActivity() {
     }
 
     private fun updateUI() {
-        val session = SessionManager.currentSession ?: return
-        val total = session.contacts.size
-        val sent = session.contacts.count { it.sendStatus == SendStatus.SENT }
-        val remaining = total - sent
-        val progress = if (total > 0) (sent * 100 / total) else 0
-        val current = session.contacts.getOrNull(SessionManager.currentIndex)
+        val total = SessionManager.totalCount
+        val sent = SessionManager.sentCount
+        val remaining = SessionManager.remainingCount
+        val progress = SessionManager.progressPercent
+        val session = SessionManager.currentSession
+        val current = session?.contacts?.getOrNull(SessionManager.currentIndex)
 
         binding.tvSentCount.text = sent.toString()
         binding.tvRemainingCount.text = remaining.toString()
         binding.progressBar.progress = progress
         binding.tvProgressPercent.text = "$progress%"
-        binding.tvCurrentContact.text = "جاري الإرسال إلى: ${current?.name ?: "..."}"
+        binding.tvCurrentContact.text = if (SessionManager.isPaused)
+            "⏸ متوقف مؤقتاً عند: ${current?.name ?: "..."}"
+        else
+            "جاري الإرسال إلى: ${current?.name ?: "..."}"
+    }
+
+    private fun updatePauseButton() {
+        if (SessionManager.isPaused) {
+            binding.btnPauseResume.text = "▶ استئناف الإرسال"
+            binding.btnPauseResume.backgroundTintList =
+                ContextCompat.getColorStateList(this, R.color.green_primary)
+        } else {
+            binding.btnPauseResume.text = "⏸ إيقاف مؤقت"
+            binding.btnPauseResume.backgroundTintList =
+                ContextCompat.getColorStateList(this, R.color.orange_warning)
+        }
     }
 
     private fun startCountdown() {
@@ -77,19 +119,25 @@ class ProgressActivity : AppCompatActivity() {
         val delayMs = (SessionManager.currentSession?.delaySeconds ?: 10) * 1000L
         countdownTimer = object : CountDownTimer(delayMs, 1000) {
             override fun onTick(millisUntilFinished: Long) {
-                binding.tvCountdown.text = "${millisUntilFinished / 1000} ث"
+                if (!SessionManager.isPaused)
+                    binding.tvCountdown.text = "${millisUntilFinished / 1000} ث"
             }
             override fun onFinish() {
-                binding.tvCountdown.text = "0 ث"
+                if (!SessionManager.isPaused) binding.tvCountdown.text = "0 ث"
             }
         }.start()
     }
 
     private fun onFinished() {
         countdownTimer?.cancel()
-        binding.tvCurrentContact.text = "✅ تم الإرسال بنجاح"
+        binding.tvCurrentContact.text = "✅ تم إرسال جميع الرسائل بنجاح"
         binding.tvCountdown.text = "انتهى"
+        binding.btnPauseResume.isEnabled = false
         binding.btnStop.text = "العودة للرئيسية"
+        binding.tvRemainingCount.text = "0"
+        binding.tvSentCount.text = SessionManager.sentCount.toString()
+        binding.progressBar.progress = 100
+        binding.tvProgressPercent.text = "100%"
     }
 
     override fun onDestroy() {

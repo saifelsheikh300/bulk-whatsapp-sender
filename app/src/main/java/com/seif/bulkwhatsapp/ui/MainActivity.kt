@@ -3,6 +3,7 @@ package com.seif.bulkwhatsapp.ui
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.text.Editable
@@ -17,13 +18,14 @@ import com.seif.bulkwhatsapp.R
 import com.seif.bulkwhatsapp.data.SendSession
 import com.seif.bulkwhatsapp.data.SessionManager
 import com.seif.bulkwhatsapp.databinding.ActivityMainBinding
+import com.seif.bulkwhatsapp.service.FloatingBubbleService
 import com.seif.bulkwhatsapp.service.WhatsAppAccessibilityService
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private var useWhatsAppBusiness = false
-    private var selectedDelay = 10 // default 10 seconds
+    private var selectedDelay = 10
 
     companion object {
         const val REQUEST_CONTACTS = 100
@@ -34,7 +36,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         setupWhatsAppSelector()
         setupContactsCard()
         setupMessageInput()
@@ -73,30 +74,22 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupWhatsAppSelector() {
         updateWhatsAppSelection()
-        binding.btnWhatsAppNormal.setOnClickListener {
-            useWhatsAppBusiness = false
-            updateWhatsAppSelection()
-        }
-        binding.btnWhatsAppBusiness.setOnClickListener {
-            useWhatsAppBusiness = true
-            updateWhatsAppSelection()
-        }
+        binding.btnWhatsAppNormal.setOnClickListener { useWhatsAppBusiness = false; updateWhatsAppSelection() }
+        binding.btnWhatsAppBusiness.setOnClickListener { useWhatsAppBusiness = true; updateWhatsAppSelection() }
     }
 
     private fun updateWhatsAppSelection() {
-        val selectedColor = ContextCompat.getColor(this, R.color.green_primary)
-        val unselectedColor = ContextCompat.getColor(this, R.color.bg_input)
-        binding.btnWhatsAppNormal.setBackgroundColor(if (!useWhatsAppBusiness) selectedColor else unselectedColor)
-        binding.btnWhatsAppBusiness.setBackgroundColor(if (useWhatsAppBusiness) selectedColor else unselectedColor)
+        val on = ContextCompat.getColor(this, R.color.green_primary)
+        val off = ContextCompat.getColor(this, R.color.bg_input)
+        binding.btnWhatsAppNormal.setBackgroundColor(if (!useWhatsAppBusiness) on else off)
+        binding.btnWhatsAppBusiness.setBackgroundColor(if (useWhatsAppBusiness) on else off)
     }
 
     private fun setupContactsCard() {
         binding.cardContacts.setOnClickListener {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED)
                 startActivity(Intent(this, ContactsActivity::class.java))
-            } else {
-                checkContactsPermission()
-            }
+            else checkContactsPermission()
         }
     }
 
@@ -107,29 +100,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupMessageInput() {
         binding.etMessage.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) {
-                binding.tvCharCount.text = "${s?.length ?: 0} حرف"
-            }
+            override fun afterTextChanged(s: Editable?) { binding.tvCharCount.text = "${s?.length ?: 0} حرف" }
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
     }
 
     private fun setupDelaySlider() {
-        // SeekBar: 0=5s, 25=30s → value = progress + 5
-        binding.seekBarDelay.progress = 5 // default = 10s
+        binding.seekBarDelay.progress = 5
         binding.tvDelayValue.text = "10 ثانية"
-
         binding.seekBarDelay.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 selectedDelay = progress + 5
                 binding.tvDelayValue.text = "$selectedDelay ثانية"
-
-                // Warning color if < 7s
-                val color = if (selectedDelay < 7)
-                    ContextCompat.getColor(this@MainActivity, R.color.red_error)
-                else
-                    ContextCompat.getColor(this@MainActivity, R.color.green_primary)
+                val color = if (selectedDelay < 7) ContextCompat.getColor(this@MainActivity, R.color.red_error)
+                            else ContextCompat.getColor(this@MainActivity, R.color.green_primary)
                 binding.tvDelayValue.setTextColor(color)
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
@@ -154,20 +139,29 @@ class MainActivity : AppCompatActivity() {
         SessionManager.currentSession = SendSession(contacts, message, useWhatsAppBusiness, selectedDelay)
         SessionManager.currentIndex = 0
         SessionManager.isRunning = true
+        SessionManager.isPaused = false
+
+        // Start floating bubble if overlay permission granted
+        if (Settings.canDrawOverlays(this)) {
+            startService(Intent(this, FloatingBubbleService::class.java))
+        } else {
+            // Request overlay permission
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+            startActivity(intent)
+        }
+
         startActivity(Intent(this, ProgressActivity::class.java))
         WhatsAppAccessibilityService.instance?.sendNextMessage()
     }
 
     private fun checkContactsPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED)
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_CONTACTS), REQUEST_CONTACTS)
-        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CONTACTS && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode == REQUEST_CONTACTS && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)
             Toast.makeText(this, "تم منح الإذن ✓", Toast.LENGTH_SHORT).show()
-        }
     }
 }

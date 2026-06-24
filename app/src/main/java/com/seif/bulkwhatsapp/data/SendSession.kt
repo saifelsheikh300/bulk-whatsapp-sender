@@ -11,4 +11,10 @@ object SessionManager {
     var currentSession: SendSession? = null
     var currentIndex: Int = 0
     var isRunning: Boolean = false
+    var isPaused: Boolean = false
+
+    val sentCount get() = currentSession?.contacts?.count { it.sendStatus == SendStatus.SENT } ?: 0
+    val totalCount get() = currentSession?.contacts?.size ?: 0
+    val remainingCount get() = totalCount - sentCount
+    val progressPercent get() = if (totalCount > 0) (sentCount * 100 / totalCount) else 0
 }

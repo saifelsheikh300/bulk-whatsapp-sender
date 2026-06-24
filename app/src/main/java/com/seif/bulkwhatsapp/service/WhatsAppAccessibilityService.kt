@@ -10,17 +10,20 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.seif.bulkwhatsapp.data.SendStatus
 import com.seif.bulkwhatsapp.data.SessionManager
+import com.seif.bulkwhatsapp.utils.PhoneUtils
 
 class WhatsAppAccessibilityService : AccessibilityService() {
 
     companion object {
         var instance: WhatsAppAccessibilityService? = null
         const val ACTION_UPDATE_PROGRESS = "com.seif.bulkwhatsapp.UPDATE_PROGRESS"
+        const val ACTION_FINISHED = "com.seif.bulkwhatsapp.FINISHED"
     }
 
     private val handler = Handler(Looper.getMainLooper())
     private var waitingForSend = false
     private var messageSent = false
+    private var pendingRunnable: Runnable? = null
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -33,7 +36,7 @@ class WhatsAppAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (!SessionManager.isRunning) return
+        if (!SessionManager.isRunning || SessionManager.isPaused) return
         val session = SessionManager.currentSession ?: return
         if (SessionManager.currentIndex >= session.contacts.size) { finishSession(); return }
 
@@ -49,41 +52,55 @@ class WhatsAppAccessibilityService : AccessibilityService() {
                 session.contacts[SessionManager.currentIndex].sendStatus = SendStatus.SENT
                 sendProgressBroadcast()
 
-                // Use dynamic delay from session
                 val delayMs = session.delaySeconds * 1000L
-                handler.postDelayed({
-                    SessionManager.currentIndex++
-                    messageSent = false
-                    if (SessionManager.currentIndex < session.contacts.size) sendNextMessage()
-                    else finishSession()
-                }, delayMs)
+                val runnable = Runnable {
+                    if (!SessionManager.isPaused && SessionManager.isRunning) {
+                        SessionManager.currentIndex++
+                        messageSent = false
+                        if (SessionManager.currentIndex < session.contacts.size) sendNextMessage()
+                        else finishSession()
+                    }
+                }
+                pendingRunnable = runnable
+                handler.postDelayed(runnable, delayMs)
             }
         }
     }
 
     private fun trySendMessage(root: AccessibilityNodeInfo, message: String): Boolean {
-        val pkg = if (SessionManager.currentSession?.useWhatsAppBusiness == true) "com.whatsapp.w4b" else "com.whatsapp"
-        val inputNode = root.findAccessibilityNodeInfosByViewId("$pkg:id/entry")?.firstOrNull() ?: return false
+        val pkg = if (SessionManager.currentSession?.useWhatsAppBusiness == true)
+            "com.whatsapp.w4b" else "com.whatsapp"
+        val inputNode = root.findAccessibilityNodeInfosByViewId("$pkg:id/entry")
+            ?.firstOrNull() ?: return false
         val args = Bundle()
         args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, message)
         inputNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
-        val sendNode = root.findAccessibilityNodeInfosByViewId("$pkg:id/send")?.firstOrNull() ?: return false
+        val sendNode = root.findAccessibilityNodeInfosByViewId("$pkg:id/send")
+            ?.firstOrNull() ?: return false
         return sendNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
 
     fun sendNextMessage() {
         val session = SessionManager.currentSession ?: return
+        if (SessionManager.isPaused || !SessionManager.isRunning) return
         if (SessionManager.currentIndex >= session.contacts.size) { finishSession(); return }
 
         val contact = session.contacts[SessionManager.currentIndex]
+        // Skip already sent contacts (prevent double sending)
+        if (contact.sendStatus == SendStatus.SENT) {
+            SessionManager.currentIndex++
+            sendNextMessage()
+            return
+        }
+
         contact.sendStatus = SendStatus.SENDING
         sendProgressBroadcast()
 
         val pkg = if (session.useWhatsAppBusiness) "com.whatsapp.w4b" else "com.whatsapp"
-        val phone = contact.phone.replace(Regex("[^0-9+]"), "")
+        val phone = PhoneUtils.normalizeEgyptianPhone(contact.phone)
 
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("https://api.whatsapp.com/send?phone=$phone")
+            data = Uri.parse("https://api.whatsapp.com/send?phone=${phone.replace("+", "")}")
             setPackage(pkg)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
@@ -101,12 +118,44 @@ class WhatsAppAccessibilityService : AccessibilityService() {
         }
     }
 
+    fun pause() {
+        SessionManager.isPaused = true
+        pendingRunnable?.let { handler.removeCallbacks(it) }
+        pendingRunnable = null
+        waitingForSend = false
+        sendProgressBroadcast()
+    }
+
+    fun resume() {
+        SessionManager.isPaused = false
+        // Resume from current index - don't resend current contact
+        // if it was already marked as SENDING (not yet SENT), reset it
+        val session = SessionManager.currentSession ?: return
+        val current = session.contacts.getOrNull(SessionManager.currentIndex)
+        if (current?.sendStatus == SendStatus.SENDING) {
+            current.sendStatus = SendStatus.PENDING
+        }
+        sendNextMessage()
+    }
+
+    fun stop() {
+        SessionManager.isRunning = false
+        SessionManager.isPaused = false
+        pendingRunnable?.let { handler.removeCallbacks(it) }
+        pendingRunnable = null
+        waitingForSend = false
+        val i = Intent(ACTION_UPDATE_PROGRESS)
+        i.putExtra("finished", true)
+        sendBroadcast(i)
+    }
+
     private fun sendProgressBroadcast() {
         sendBroadcast(Intent(ACTION_UPDATE_PROGRESS))
     }
 
     private fun finishSession() {
         SessionManager.isRunning = false
+        SessionManager.isPaused = false
         val i = Intent(ACTION_UPDATE_PROGRESS)
         i.putExtra("finished", true)
         sendBroadcast(i)

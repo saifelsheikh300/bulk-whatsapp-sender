@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bubble_bg"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:gravity="center"
+    android:minWidth="80dp"
+    android:elevation="8dp">
+
+    <TextView
+        android:id="@+id/tvBubbleStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="✈️ يُرسل"
+        android:textColor="#FFFFFF"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/cairo"
+        android:layout_marginBottom="4dp" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginEnd="8dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="أُرسل"
+                android:textColor="#A0A0A0"
+                android:textSize="9sp"
+                android:fontFamily="@font/cairo" />
+            <TextView
+                android:id="@+id/tvBubbleSent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textColor="#25D366"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/cairo" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="24dp"
+            android:background="#444444" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginStart="8dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="متبقي"
+                android:textColor="#A0A0A0"
+                android:textSize="9sp"
+                android:fontFamily="@font/cairo" />
+            <TextView
+                android:id="@+id/tvBubbleRemaining"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textColor="#FFA500"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/cairo" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
