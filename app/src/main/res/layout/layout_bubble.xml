@@ -4,9 +4,9 @@
     android:layout_height="wrap_content"
     android:background="@drawable/bubble_bg"
     android:orientation="vertical"
-    android:padding="12dp"
+    android:padding="10dp"
     android:gravity="center"
-    android:minWidth="80dp">
+    android:minWidth="90dp">
 
     <TextView
         android:id="@+id/tvBubbleStatus"
@@ -16,13 +16,15 @@
         android:textColor="#FFFFFF"
         android:textSize="11sp"
         android:textStyle="bold"
+        android:fontFamily="@font/cairo"
         android:layout_marginBottom="4dp" />
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center">
+        android:gravity="center"
+        android:layout_marginBottom="8dp">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -30,28 +32,27 @@
             android:orientation="vertical"
             android:gravity="center"
             android:layout_marginEnd="8dp">
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="ارسل"
                 android:textColor="#A0A0A0"
-                android:textSize="9sp" />
-
+                android:textSize="9sp"
+                android:fontFamily="@font/cairo" />
             <TextView
                 android:id="@+id/tvBubbleSent"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
                 android:textColor="#25D366"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/cairo" />
         </LinearLayout>
 
         <View
             android:layout_width="1dp"
-            android:layout_height="24dp"
+            android:layout_height="28dp"
             android:background="#444444" />
 
         <LinearLayout
@@ -60,25 +61,52 @@
             android:orientation="vertical"
             android:gravity="center"
             android:layout_marginStart="8dp">
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="متبقي"
                 android:textColor="#A0A0A0"
-                android:textSize="9sp" />
-
+                android:textSize="9sp"
+                android:fontFamily="@font/cairo" />
             <TextView
                 android:id="@+id/tvBubbleRemaining"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
                 android:textColor="#FFA500"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/cairo" />
         </LinearLayout>
+    </LinearLayout>
 
+    <!-- Pause/Stop buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <ImageButton
+            android:id="@+id/btnBubblePause"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/circle_green"
+            android:src="@android:drawable/ic_media_pause"
+            android:scaleType="centerInside"
+            android:padding="6dp"
+            android:contentDescription="pause" />
+
+        <ImageButton
+            android:id="@+id/btnBubbleStop"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/circle_red"
+            android:src="@android:drawable/ic_delete"
+            android:scaleType="centerInside"
+            android:padding="6dp"
+            android:contentDescription="stop" />
     </LinearLayout>
 
 </LinearLayout>

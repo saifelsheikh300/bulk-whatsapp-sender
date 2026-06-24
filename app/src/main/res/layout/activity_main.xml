@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg_dark"
@@ -13,175 +12,160 @@
         android:layout_height="64dp"
         android:background="@color/bg_card"
         android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="20dp"
-        android:paddingEnd="20dp">
-
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
         <ImageView
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:src="@drawable/ic_whatsapp_logo"
-            android:layout_marginEnd="12dp" />
-
+            android:layout_marginEnd="10dp" />
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="رسالة جماعية"
+            android:text="وتساب الطيار"
             android:textColor="@color/text_primary"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:fontFamily="sans-serif-medium" />
-
+            android:fontFamily="@font/cairo" />
     </LinearLayout>
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="16dp">
+        android:fillViewport="true"
+        android:clipToPadding="false"
+        android:paddingBottom="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:padding="16dp">
 
-            <!-- Accessibility Status Card -->
+            <!-- Accessibility Card -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardAccessibility"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
                 style="@style/CardStyle">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="16dp"
+                    android:padding="14dp"
                     android:gravity="center_vertical">
-
                     <ImageView
                         android:id="@+id/imgAccessibilityStatus"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
                         android:src="@drawable/ic_warning"
-                        android:layout_marginEnd="12dp" />
-
+                        android:layout_marginEnd="10dp" />
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:orientation="vertical">
-
                         <TextView
-                            android:id="@+id/tvAccessibilityTitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="خدمة الإمكانية"
+                            android:text="خدمة الامكانية"
                             android:textColor="@color/text_primary"
                             android:textSize="14sp"
-                            android:textStyle="bold" />
-
+                            android:textStyle="bold"
+                            android:fontFamily="@font/cairo" />
                         <TextView
                             android:id="@+id/tvAccessibilityStatus"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="غير مفعّلة - اضغط لتفعيلها"
+                            android:text="غير مفعلة - اضغط لتفعيلها"
                             android:textColor="@color/red_error"
-                            android:textSize="12sp" />
+                            android:textSize="12sp"
+                            android:fontFamily="@font/cairo" />
                     </LinearLayout>
-
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnEnableAccessibility"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_height="40dp"
                         android:text="تفعيل"
                         android:textSize="13sp"
-                        style="@style/GreenButton"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp" />
+                        android:fontFamily="@font/cairo"
+                        style="@style/GreenButton" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- WhatsApp Selection Card -->
+            <!-- WhatsApp Selector -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
                 style="@style/CardStyle">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
-
+                    android:padding="14dp">
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="اختر تطبيق الإرسال"
+                        android:text="تطبيق الارسال"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp"
-                        android:layout_marginBottom="12dp" />
-
+                        android:fontFamily="@font/cairo"
+                        android:layout_marginBottom="10dp" />
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
-
                         <LinearLayout
                             android:id="@+id/btnWhatsAppNormal"
                             android:layout_width="0dp"
-                            android:layout_height="56dp"
+                            android:layout_height="52dp"
                             android:layout_weight="1"
-                            android:layout_marginEnd="8dp"
+                            android:layout_marginEnd="6dp"
                             android:background="@drawable/selector_whatsapp_btn"
                             android:gravity="center"
                             android:orientation="horizontal"
-                            android:padding="12dp"
                             android:clickable="true"
                             android:focusable="true">
-
                             <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
                                 android:src="@drawable/ic_whatsapp_logo"
-                                android:layout_marginEnd="8dp" />
-
+                                android:layout_marginEnd="6dp" />
                             <TextView
                                 android:id="@+id/tvWhatsAppNormal"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="واتساب عادي"
                                 android:textColor="@color/text_primary"
-                                android:textSize="14sp" />
+                                android:textSize="13sp"
+                                android:fontFamily="@font/cairo" />
                         </LinearLayout>
-
                         <LinearLayout
                             android:id="@+id/btnWhatsAppBusiness"
                             android:layout_width="0dp"
-                            android:layout_height="56dp"
+                            android:layout_height="52dp"
                             android:layout_weight="1"
+                            android:layout_marginStart="6dp"
                             android:background="@drawable/selector_whatsapp_btn"
                             android:gravity="center"
                             android:orientation="horizontal"
-                            android:padding="12dp"
                             android:clickable="true"
                             android:focusable="true">
-
                             <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
                                 android:src="@drawable/ic_whatsapp_business"
-                                android:layout_marginEnd="8dp" />
-
+                                android:layout_marginEnd="6dp" />
                             <TextView
                                 android:id="@+id/tvWhatsAppBusiness"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="واتساب بيزنس"
                                 android:textColor="@color/text_primary"
-                                android:textSize="14sp" />
+                                android:textSize="13sp"
+                                android:fontFamily="@font/cairo" />
                         </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
@@ -196,52 +180,48 @@
                 android:clickable="true"
                 android:focusable="true"
                 style="@style/CardStyle">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="16dp"
+                    android:padding="14dp"
                     android:gravity="center_vertical">
-
                     <LinearLayout
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
                         android:background="@drawable/circle_green"
                         android:gravity="center"
-                        android:layout_marginEnd="14dp">
+                        android:layout_marginEnd="12dp">
                         <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
                             android:src="@drawable/ic_contacts" />
                     </LinearLayout>
-
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:orientation="vertical">
-
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="جهات الاتصال"
                             android:textColor="@color/text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/cairo" />
                         <TextView
                             android:id="@+id/tvContactsCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="لم يتم التحديد بعد"
                             android:textColor="@color/text_secondary"
-                            android:textSize="13sp" />
+                            android:textSize="12sp"
+                            android:fontFamily="@font/cairo" />
                     </LinearLayout>
-
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
                         android:src="@drawable/ic_arrow_left"
                         android:alpha="0.5" />
                 </LinearLayout>
@@ -253,42 +233,40 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
                 style="@style/CardStyle">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
-
+                    android:padding="14dp">
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="نص الرسالة"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp"
-                        android:layout_marginBottom="10dp" />
-
+                        android:fontFamily="@font/cairo"
+                        android:layout_marginBottom="8dp" />
                     <EditText
                         android:id="@+id/etMessage"
                         android:layout_width="match_parent"
-                        android:layout_height="140dp"
+                        android:layout_height="130dp"
                         android:background="@drawable/bg_input"
                         android:gravity="top|end"
-                        android:hint="@string/message_hint"
-                        android:textColorHint="@color/text_secondary"
+                        android:hint="اكتب رسالتك هنا..."
                         android:inputType="textMultiLine"
                         android:padding="12dp"
                         android:textColor="@color/text_primary"
-                        android:textSize="15sp" />
-
+                        android:textColorHint="@color/text_secondary"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/cairo" />
                     <TextView
                         android:id="@+id/tvCharCount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="start"
                         android:text="0 حرف"
                         android:textColor="@color/text_secondary"
                         android:textSize="11sp"
+                        android:fontFamily="@font/cairo"
                         android:layout_marginTop="6dp" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -299,35 +277,31 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
                 style="@style/CardStyle">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
-
+                    android:padding="14dp">
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="12dp">
-
+                        android:layout_marginBottom="10dp">
                         <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
                             android:src="@drawable/ic_timer"
-                            android:layout_marginEnd="10dp" />
-
+                            android:layout_marginEnd="8dp" />
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="التأخير بين كل رسالة"
+                            android:text="التاخير بين كل رسالة"
                             android:textColor="@color/text_primary"
                             android:textSize="14sp"
-                            android:textStyle="bold" />
-
+                            android:textStyle="bold"
+                            android:fontFamily="@font/cairo" />
                         <TextView
                             android:id="@+id/tvDelayValue"
                             android:layout_width="wrap_content"
@@ -335,9 +309,9 @@
                             android:text="10 ثانية"
                             android:textColor="@color/green_primary"
                             android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:textStyle="bold"
+                            android:fontFamily="@font/cairo" />
                     </LinearLayout>
-
                     <SeekBar
                         android:id="@+id/seekBarDelay"
                         android:layout_width="match_parent"
@@ -346,41 +320,38 @@
                         android:progress="5"
                         android:progressTint="@color/green_primary"
                         android:thumbTint="@color/green_primary" />
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:layout_marginTop="6dp">
-
+                        android:layout_marginTop="4dp">
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="5 ث"
                             android:textColor="@color/text_secondary"
-                            android:textSize="11sp" />
-
+                            android:textSize="11sp"
+                            android:fontFamily="@font/cairo" />
                         <View
                             android:layout_width="0dp"
                             android:layout_height="0dp"
                             android:layout_weight="1" />
-
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="30 ث"
                             android:textColor="@color/text_secondary"
-                            android:textSize="11sp" />
+                            android:textSize="11sp"
+                            android:fontFamily="@font/cairo" />
                     </LinearLayout>
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="⚠️ أقل من 7 ثواني قد يسبب حظر الحساب"
+                        android:text="اقل من 7 ثواني قد يسبب حظر الحساب"
                         android:textColor="@color/orange_warning"
                         android:textSize="12sp"
+                        android:fontFamily="@font/cairo"
                         android:layout_marginTop="8dp" />
-
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -388,12 +359,13 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnStart"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:text="ابدأ الإرسال"
-                android:textSize="17sp"
+                android:layout_height="58dp"
+                android:text="ابدا الارسال"
+                android:textSize="18sp"
                 android:textStyle="bold"
-                style="@style/GreenButton"
-                android:layout_marginBottom="24dp" />
+                android:fontFamily="@font/cairo"
+                android:layout_marginBottom="24dp"
+                style="@style/GreenButton" />
 
         </LinearLayout>
     </ScrollView>
