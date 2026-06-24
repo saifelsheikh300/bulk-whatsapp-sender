@@ -40,7 +40,7 @@
                 android:textSize="9sp"
                 android:fontFamily="@font/cairo" />
             <TextView
-                android:id="@+id/tvBubbleSent"
+                android:id="@+id/tvBubbleRemaining"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
@@ -69,7 +69,7 @@
                 android:textSize="9sp"
                 android:fontFamily="@font/cairo" />
             <TextView
-                android:id="@+id/tvBubbleRemaining"
+                android:id="@+id/tvBubbleSent"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"

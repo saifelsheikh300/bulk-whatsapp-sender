@@ -186,28 +186,32 @@
             </androidx.cardview.widget.CardView>
 
             <!-- Pause Button -->
-            <com.google.android.material.button.MaterialButton
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnPauseResume"
                 android:layout_width="match_parent"
-                android:layout_height="54dp"
+                android:layout_height="56dp"
                 android:layout_marginBottom="12dp"
                 android:text="ايقاف مؤقت"
-                android:textSize="17sp"
+                android:textSize="18sp"
                 android:textStyle="bold"
-                android:backgroundTint="@color/orange_warning"
-                style="@style/GreenButton" />
+                android:textColor="@color/white"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_orange"
+                android:fontFamily="@font/cairo" />
 
             <!-- Stop Button -->
-            <com.google.android.material.button.MaterialButton
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnStop"
                 android:layout_width="match_parent"
-                android:layout_height="54dp"
+                android:layout_height="56dp"
                 android:layout_marginBottom="16dp"
                 android:text="ايقاف نهائي"
-                android:textSize="17sp"
+                android:textSize="18sp"
                 android:textStyle="bold"
-                android:backgroundTint="@color/red_error"
-                style="@style/GreenButton" />
+                android:textColor="@color/white"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_red"
+                android:fontFamily="@font/cairo" />
 
         </LinearLayout>
     </ScrollView>
