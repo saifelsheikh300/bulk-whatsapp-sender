@@ -7,9 +7,12 @@ import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.os.Handler
+import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.seif.bulkwhatsapp.R
+import com.seif.bulkwhatsapp.ui.MainActivity
 import com.seif.bulkwhatsapp.data.SendStatus
 import com.seif.bulkwhatsapp.data.SessionManager
 import com.seif.bulkwhatsapp.databinding.ActivityProgressBinding
@@ -130,14 +133,21 @@ class ProgressActivity : AppCompatActivity() {
 
     private fun onFinished() {
         countdownTimer?.cancel()
-        binding.tvCurrentContact.text = "✅ تم إرسال جميع الرسائل بنجاح"
+        binding.tvCurrentContact.text = "تم إرسال جميع الرسائل بنجاح"
         binding.tvCountdown.text = "انتهى"
         binding.btnPauseResume.isEnabled = false
-        binding.btnStop.text = "العودة للرئيسية"
         binding.tvRemainingCount.text = "0"
         binding.tvSentCount.text = SessionManager.sentCount.toString()
         binding.progressBar.progress = 100
         binding.tvProgressPercent.text = "100%"
+
+        // Auto return to main screen after 3 seconds
+        Handler(Looper.getMainLooper()).postDelayed({
+            val intent = Intent(this, MainActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            startActivity(intent)
+            finish()
+        }, 3000)
     }
 
     override fun onDestroy() {
