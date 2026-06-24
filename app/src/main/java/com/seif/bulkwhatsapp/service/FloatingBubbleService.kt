@@ -15,6 +15,7 @@ import android.view.WindowManager
 import android.widget.TextView
 import com.seif.bulkwhatsapp.R
 import com.seif.bulkwhatsapp.data.SessionManager
+import com.seif.bulkwhatsapp.ui.ProgressActivity
 
 class FloatingBubbleService : Service() {
 
