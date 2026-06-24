@@ -275,12 +275,11 @@
                         android:background="@drawable/bg_input"
                         android:gravity="top|end"
                         android:hint="@string/message_hint"
-                        android:hintTextColor="@color/text_secondary"
+                        android:textColorHint="@color/text_secondary"
                         android:inputType="textMultiLine"
                         android:padding="12dp"
                         android:textColor="@color/text_primary"
-                        android:textSize="15sp"
-                        android:textColorHint="@color/text_secondary" />
+                        android:textSize="15sp" />
 
                     <TextView
                         android:id="@+id/tvCharCount"

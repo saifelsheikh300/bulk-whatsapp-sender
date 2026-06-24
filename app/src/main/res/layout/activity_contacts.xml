@@ -59,13 +59,11 @@
             android:layout_height="40dp"
             android:background="@drawable/bg_input"
             android:hint="@string/search_contacts"
-            android:hintTextColor="@color/text_secondary"
+            android:textColorHint="@color/text_secondary"
             android:inputType="text"
             android:padding="10dp"
             android:textColor="@color/text_primary"
-            android:textSize="14sp"
-            android:drawableEnd="@drawable/ic_search"
-            android:drawablePadding="8dp" />
+            android:textSize="14sp" />
     </LinearLayout>
 
     <!-- Select All Bar -->
