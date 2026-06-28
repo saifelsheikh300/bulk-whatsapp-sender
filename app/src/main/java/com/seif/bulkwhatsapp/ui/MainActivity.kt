@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.text.Editable
@@ -11,6 +12,7 @@ import android.text.TextWatcher
 import android.view.View
 import android.widget.SeekBar
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -27,9 +29,37 @@ class MainActivity : AppCompatActivity() {
     private var useWhatsAppBusiness = false
     private var selectedDelay = 10
 
+    // Media attachment
+    private var selectedMediaUri: Uri? = null
+    private var selectedMediaType: String? = null
+    private var selectedMediaName: String? = null
+
     companion object {
         const val REQUEST_CONTACTS = 100
         var selectedContacts = mutableListOf<com.seif.bulkwhatsapp.data.Contact>()
+    }
+
+    private val pickMediaLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            selectedMediaUri = uri
+            selectedMediaType = contentResolver.getType(uri) ?: "application/octet-stream"
+            // Get file name for display
+            val cursor = contentResolver.query(uri, null, null, null, null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    val nameIdx = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (nameIdx >= 0) selectedMediaName = it.getString(nameIdx)
+                }
+            }
+            // Grant persistent read permission
+            try {
+                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (_: Exception) {}
+
+            updateMediaUI()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,6 +70,7 @@ class MainActivity : AppCompatActivity() {
         setupContactsCard()
         setupMessageInput()
         setupDelaySlider()
+        setupMediaPicker()
         setupStartButton()
         checkContactsPermission()
     }
@@ -122,13 +153,47 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    private fun setupMediaPicker() {
+        binding.btnPickMedia.setOnClickListener {
+            // Pick any file type
+            pickMediaLauncher.launch("*/*")
+        }
+        binding.btnRemoveMedia.setOnClickListener {
+            selectedMediaUri = null
+            selectedMediaType = null
+            selectedMediaName = null
+            updateMediaUI()
+        }
+        updateMediaUI()
+    }
+
+    private fun updateMediaUI() {
+        if (selectedMediaUri != null) {
+            val icon = when {
+                selectedMediaType?.startsWith("image/") == true -> "🖼️"
+                selectedMediaType?.startsWith("video/") == true -> "🎥"
+                selectedMediaType?.startsWith("audio/") == true -> "🎵"
+                else -> "📎"
+            }
+            binding.tvMediaName.text = "$icon ${selectedMediaName ?: "ملف محدد"}"
+            binding.tvMediaName.visibility = View.VISIBLE
+            binding.btnRemoveMedia.visibility = View.VISIBLE
+            binding.btnPickMedia.text = "تغيير الملف"
+        } else {
+            binding.tvMediaName.visibility = View.GONE
+            binding.btnRemoveMedia.visibility = View.GONE
+            binding.btnPickMedia.text = "📎 إرفاق صورة / فيديو / صوت"
+        }
+    }
+
     private fun setupStartButton() {
         binding.btnStart.setOnClickListener {
             val message = binding.etMessage.text.toString().trim()
+            val hasMedia = selectedMediaUri != null
             when {
                 !isAccessibilityEnabled() -> Toast.makeText(this, "يجب تفعيل خدمة الإمكانية أولاً", Toast.LENGTH_LONG).show()
                 selectedContacts.isEmpty() -> Toast.makeText(this, "اختر جهات الاتصال أولاً", Toast.LENGTH_SHORT).show()
-                message.isEmpty() -> Toast.makeText(this, "اكتب الرسالة أولاً", Toast.LENGTH_SHORT).show()
+                !hasMedia && message.isEmpty() -> Toast.makeText(this, "اكتب رسالة أو اختر ملف للإرسال", Toast.LENGTH_SHORT).show()
                 else -> startSending(message)
             }
         }
@@ -136,25 +201,23 @@ class MainActivity : AppCompatActivity() {
 
     private fun startSending(message: String) {
         val contacts = selectedContacts.map { it.copy() }
-        SessionManager.currentSession = SendSession(contacts, message, useWhatsAppBusiness, selectedDelay)
+        SessionManager.currentSession = SendSession(
+            contacts = contacts,
+            message = message,
+            useWhatsAppBusiness = useWhatsAppBusiness,
+            delaySeconds = selectedDelay,
+            mediaUri = selectedMediaUri?.toString(),
+            mediaType = selectedMediaType
+        )
         SessionManager.currentIndex = 0
         SessionManager.isRunning = true
         SessionManager.isPaused = false
 
-        // Start floating bubble only if overlay permission granted
         if (Settings.canDrawOverlays(this)) {
             startService(Intent(this, FloatingBubbleService::class.java))
         }
-        // Always go to progress screen regardless
         startActivity(Intent(this, ProgressActivity::class.java))
         WhatsAppAccessibilityService.instance?.sendNextMessage()
-    }
-
-    private fun requestOverlayPermission() {
-        if (!Settings.canDrawOverlays(this)) {
-            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
-            startActivityForResult(intent, 200)
-        }
     }
 
     private fun checkContactsPermission() {
