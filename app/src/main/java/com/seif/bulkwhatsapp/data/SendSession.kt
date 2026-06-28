@@ -4,7 +4,9 @@ data class SendSession(
     val contacts: List<Contact>,
     val message: String,
     val useWhatsAppBusiness: Boolean,
-    val delaySeconds: Int = 10
+    val delaySeconds: Int = 10,
+    val mediaUri: String? = null,       // URI string of selected file
+    val mediaType: String? = null       // MIME type e.g. "image/jpeg", "video/mp4", "audio/ogg"
 )
 
 object SessionManager {
