@@ -246,7 +246,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="نص الرسالة"
+                        android:text="نص الرسالة (اختياري مع ملف)"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp"
                         android:fontFamily="@font/cairo"
@@ -273,6 +273,75 @@
                         android:textSize="11sp"
                         android:fontFamily="@font/cairo"
                         android:layout_marginTop="6dp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Media Attachment Card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                style="@style/CardStyle">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="مرفق (صورة / فيديو / صوت / ملف)"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:fontFamily="@font/cairo"
+                        android:layout_marginBottom="10dp" />
+
+                    <!-- Selected file name -->
+                    <TextView
+                        android:id="@+id/tvMediaName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_input"
+                        android:padding="10dp"
+                        android:textColor="@color/green_primary"
+                        android:textSize="13sp"
+                        android:fontFamily="@font/cairo"
+                        android:layout_marginBottom="10dp"
+                        android:visibility="gone"
+                        android:singleLine="true"
+                        android:ellipsize="middle" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <androidx.appcompat.widget.AppCompatButton
+                            android:id="@+id/btnPickMedia"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:text="📎 إرفاق صورة / فيديو / صوت"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/white"
+                            android:textAllCaps="false"
+                            android:background="@drawable/btn_orange"
+                            android:fontFamily="@font/cairo" />
+
+                        <androidx.appcompat.widget.AppCompatButton
+                            android:id="@+id/btnRemoveMedia"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:text="✕"
+                            android:textSize="16sp"
+                            android:textColor="@color/white"
+                            android:textAllCaps="false"
+                            android:background="@drawable/btn_red"
+                            android:visibility="gone" />
+
+                    </LinearLayout>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
