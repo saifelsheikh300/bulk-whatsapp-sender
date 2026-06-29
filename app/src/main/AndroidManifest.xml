@@ -17,7 +17,7 @@
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="وتساب الطيار"
+        android:label="واتساب الطيار"
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.WaAlTayar">
@@ -37,7 +37,7 @@
         <service
             android:name=".service.WhatsAppAccessibilityService"
             android:exported="true"
-            android:label="وتساب الطيار - خدمة الإرسال"
+            android:label="واتساب الطيار - خدمة الإرسال"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
