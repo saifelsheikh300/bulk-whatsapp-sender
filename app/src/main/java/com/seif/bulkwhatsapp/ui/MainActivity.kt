@@ -168,7 +168,7 @@ class MainActivity : AppCompatActivity() {
             val btnMedia     = item.findViewById<Button>(R.id.btnVariantMedia)
             val tvMediaName  = item.findViewById<TextView>(R.id.tvVariantMediaName)
             val btnRemMedia  = item.findViewById<Button>(R.id.btnVariantRemoveMedia)
-            val btnDelete    = item.findViewById<ImageButton>(R.id.btnDeleteVariant)
+            val btnDelete    = item.findViewById<Button>(R.id.btnDeleteVariant)
 
             tvNum.text = "رسالة ${index + 1}"
             etMessage.setText(variant.message)
