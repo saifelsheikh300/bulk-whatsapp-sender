@@ -4,19 +4,20 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.LayoutInflater
 import android.view.View
-import android.widget.SeekBar
-import android.widget.Toast
+import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.seif.bulkwhatsapp.R
+import com.seif.bulkwhatsapp.data.MessageVariant
 import com.seif.bulkwhatsapp.data.SendSession
 import com.seif.bulkwhatsapp.data.SessionManager
 import com.seif.bulkwhatsapp.databinding.ActivityMainBinding
@@ -29,10 +30,11 @@ class MainActivity : AppCompatActivity() {
     private var useWhatsAppBusiness = false
     private var selectedDelay = 10
 
-    // Media attachment
-    private var selectedMediaUri: Uri? = null
-    private var selectedMediaType: String? = null
-    private var selectedMediaName: String? = null
+    // قائمة الرسائل المتعددة
+    private val variants = mutableListOf<MessageVariant>()
+
+    // لتحديد لأي variant بنختار ميديا حاليًا
+    private var pickingVariantIndex = -1
 
     companion object {
         const val REQUEST_CONTACTS = 100
@@ -42,24 +44,25 @@ class MainActivity : AppCompatActivity() {
     private val pickMediaLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        if (uri != null) {
-            selectedMediaUri = uri
-            selectedMediaType = contentResolver.getType(uri) ?: "application/octet-stream"
-            // Get file name for display
-            val cursor = contentResolver.query(uri, null, null, null, null)
-            cursor?.use {
+        if (uri != null && pickingVariantIndex >= 0 && pickingVariantIndex < variants.size) {
+            val mimeType = contentResolver.getType(uri) ?: "application/octet-stream"
+            var fileName: String? = null
+            contentResolver.query(uri, null, null, null, null)?.use {
                 if (it.moveToFirst()) {
-                    val nameIdx = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                    if (nameIdx >= 0) selectedMediaName = it.getString(nameIdx)
+                    val idx = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (idx >= 0) fileName = it.getString(idx)
                 }
             }
-            // Grant persistent read permission
-            try {
-                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            } catch (_: Exception) {}
+            try { contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) } catch (_: Exception) {}
 
-            updateMediaUI()
+            variants[pickingVariantIndex] = variants[pickingVariantIndex].copy(
+                mediaUri = uri.toString(),
+                mediaType = mimeType,
+                mediaName = fileName
+            )
+            refreshVariantsList()
         }
+        pickingVariantIndex = -1
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,9 +71,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         setupWhatsAppSelector()
         setupContactsCard()
-        setupMessageInput()
         setupDelaySlider()
-        setupMediaPicker()
+        setupVariants()
         setupStartButton()
         checkContactsPermission()
     }
@@ -81,28 +83,23 @@ class MainActivity : AppCompatActivity() {
         updateContactsCount()
     }
 
+    // ────────────── Accessibility ──────────────
     private fun updateAccessibilityStatus() {
         val enabled = isAccessibilityEnabled()
-        if (enabled) {
-            binding.tvAccessibilityStatus.text = "مفعّلة ✓"
-            binding.tvAccessibilityStatus.setTextColor(ContextCompat.getColor(this, R.color.green_primary))
-            binding.btnEnableAccessibility.visibility = View.GONE
-        } else {
-            binding.tvAccessibilityStatus.text = "غير مفعّلة - اضغط لتفعيلها"
-            binding.tvAccessibilityStatus.setTextColor(ContextCompat.getColor(this, R.color.red_error))
-            binding.btnEnableAccessibility.visibility = View.VISIBLE
-        }
-        binding.btnEnableAccessibility.setOnClickListener {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-        }
+        binding.tvAccessibilityStatus.text = if (enabled) "مفعّلة ✓" else "غير مفعّلة - اضغط لتفعيلها"
+        binding.tvAccessibilityStatus.setTextColor(
+            ContextCompat.getColor(this, if (enabled) R.color.green_primary else R.color.red_error)
+        )
+        binding.btnEnableAccessibility.visibility = if (enabled) View.GONE else View.VISIBLE
+        binding.btnEnableAccessibility.setOnClickListener { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
     }
 
     private fun isAccessibilityEnabled(): Boolean {
         val service = "${packageName}/${WhatsAppAccessibilityService::class.java.canonicalName}"
-        val enabled = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: ""
-        return enabled.contains(service)
+        return (Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: "").contains(service)
     }
 
+    // ────────────── WhatsApp selector ──────────────
     private fun setupWhatsAppSelector() {
         updateWhatsAppSelection()
         binding.btnWhatsAppNormal.setOnClickListener { useWhatsAppBusiness = false; updateWhatsAppSelection() }
@@ -116,6 +113,7 @@ class MainActivity : AppCompatActivity() {
         binding.btnWhatsAppBusiness.setBackgroundColor(if (useWhatsAppBusiness) on else off)
     }
 
+    // ────────────── Contacts ──────────────
     private fun setupContactsCard() {
         binding.cardContacts.setOnClickListener {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED)
@@ -125,97 +123,139 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateContactsCount() {
-        val count = selectedContacts.size
-        binding.tvContactsCount.text = if (count == 0) "لم يتم التحديد بعد" else "تم تحديد $count جهة اتصال"
+        binding.tvContactsCount.text = if (selectedContacts.isEmpty()) "لم يتم التحديد بعد"
+        else "تم تحديد ${selectedContacts.size} جهة اتصال"
     }
 
-    private fun setupMessageInput() {
-        binding.etMessage.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) { binding.tvCharCount.text = "${s?.length ?: 0} حرف" }
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-        })
-    }
-
+    // ────────────── Delay slider ──────────────
     private fun setupDelaySlider() {
         binding.seekBarDelay.progress = 5
         binding.tvDelayValue.text = "10 ثانية"
         binding.seekBarDelay.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                selectedDelay = progress + 5
+            override fun onProgressChanged(s: SeekBar?, p: Int, u: Boolean) {
+                selectedDelay = p + 5
                 binding.tvDelayValue.text = "$selectedDelay ثانية"
-                val color = if (selectedDelay < 7) ContextCompat.getColor(this@MainActivity, R.color.red_error)
-                            else ContextCompat.getColor(this@MainActivity, R.color.green_primary)
-                binding.tvDelayValue.setTextColor(color)
+                binding.tvDelayValue.setTextColor(
+                    ContextCompat.getColor(this@MainActivity, if (selectedDelay < 7) R.color.red_error else R.color.green_primary)
+                )
             }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStartTrackingTouch(s: SeekBar?) {}
+            override fun onStopTrackingTouch(s: SeekBar?) {}
         })
     }
 
-    private fun setupMediaPicker() {
-        binding.btnPickMedia.setOnClickListener {
-            // Pick any file type
-            pickMediaLauncher.launch("*/*")
+    // ────────────── Variants (الرسائل المتعددة) ──────────────
+    private fun setupVariants() {
+        // أضف رسالة فارغة أولى تلقائياً
+        if (variants.isEmpty()) variants.add(MessageVariant())
+        refreshVariantsList()
+
+        binding.btnAddVariant.setOnClickListener {
+            variants.add(MessageVariant())
+            refreshVariantsList()
         }
-        binding.btnRemoveMedia.setOnClickListener {
-            selectedMediaUri = null
-            selectedMediaType = null
-            selectedMediaName = null
-            updateMediaUI()
-        }
-        updateMediaUI()
     }
 
-    private fun updateMediaUI() {
-        if (selectedMediaUri != null) {
-            val icon = when {
-                selectedMediaType?.startsWith("image/") == true -> "🖼️"
-                selectedMediaType?.startsWith("video/") == true -> "🎥"
-                selectedMediaType?.startsWith("audio/") == true -> "🎵"
-                else -> "📎"
+    private fun refreshVariantsList() {
+        val container = binding.containerVariants
+        container.removeAllViews()
+
+        variants.forEachIndexed { index, variant ->
+            val item = LayoutInflater.from(this).inflate(R.layout.item_message_variant, container, false)
+
+            val tvNum        = item.findViewById<TextView>(R.id.tvVariantNum)
+            val etMessage    = item.findViewById<EditText>(R.id.etVariantMessage)
+            val btnMedia     = item.findViewById<Button>(R.id.btnVariantMedia)
+            val tvMediaName  = item.findViewById<TextView>(R.id.tvVariantMediaName)
+            val btnRemMedia  = item.findViewById<Button>(R.id.btnVariantRemoveMedia)
+            val btnDelete    = item.findViewById<ImageButton>(R.id.btnDeleteVariant)
+
+            tvNum.text = "رسالة ${index + 1}"
+            etMessage.setText(variant.message)
+            etMessage.addTextChangedListener(object : TextWatcher {
+                override fun afterTextChanged(s: Editable?) {
+                    if (index < variants.size)
+                        variants[index] = variants[index].copy(message = s?.toString() ?: "")
+                }
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            })
+
+            // ميديا
+            if (variant.mediaUri != null) {
+                val icon = when {
+                    variant.mediaType?.startsWith("image/") == true -> "🖼️"
+                    variant.mediaType?.startsWith("video/") == true -> "🎥"
+                    variant.mediaType?.startsWith("audio/") == true -> "🎵"
+                    else -> "📎"
+                }
+                tvMediaName.text = "$icon ${variant.mediaName ?: "ملف"}"
+                tvMediaName.visibility = View.VISIBLE
+                btnRemMedia.visibility = View.VISIBLE
+                btnMedia.text = "تغيير"
+            } else {
+                tvMediaName.visibility = View.GONE
+                btnRemMedia.visibility = View.GONE
+                btnMedia.text = "📎 ملف"
             }
-            binding.tvMediaName.text = "$icon ${selectedMediaName ?: "ملف محدد"}"
-            binding.tvMediaName.visibility = View.VISIBLE
-            binding.btnRemoveMedia.visibility = View.VISIBLE
-            binding.btnPickMedia.text = "تغيير الملف"
-        } else {
-            binding.tvMediaName.visibility = View.GONE
-            binding.btnRemoveMedia.visibility = View.GONE
-            binding.btnPickMedia.text = "📎 إرفاق صورة / فيديو / صوت"
+
+            btnMedia.setOnClickListener {
+                pickingVariantIndex = index
+                pickMediaLauncher.launch("*/*")
+            }
+
+            btnRemMedia.setOnClickListener {
+                variants[index] = variants[index].copy(mediaUri = null, mediaType = null, mediaName = null)
+                refreshVariantsList()
+            }
+
+            // حذف variant (مش هيظهر لو في رسالة واحدة بس)
+            if (variants.size > 1) {
+                btnDelete.visibility = View.VISIBLE
+                btnDelete.setOnClickListener {
+                    variants.removeAt(index)
+                    refreshVariantsList()
+                }
+            } else {
+                btnDelete.visibility = View.GONE
+            }
+
+            container.addView(item)
         }
+
+        // اظهر عدد الرسائل
+        binding.tvVariantsCount.text = "سيتم الإرسال عشوائياً من ${variants.size} رسالة"
+        binding.tvVariantsCount.visibility = if (variants.size > 1) View.VISIBLE else View.GONE
     }
 
+    // ────────────── Start ──────────────
     private fun setupStartButton() {
         binding.btnStart.setOnClickListener {
-            val message = binding.etMessage.text.toString().trim()
-            val hasMedia = selectedMediaUri != null
+            val hasContent = variants.any { it.message.isNotBlank() || it.mediaUri != null }
             when {
                 !isAccessibilityEnabled() -> Toast.makeText(this, "يجب تفعيل خدمة الإمكانية أولاً", Toast.LENGTH_LONG).show()
                 selectedContacts.isEmpty() -> Toast.makeText(this, "اختر جهات الاتصال أولاً", Toast.LENGTH_SHORT).show()
-                !hasMedia && message.isEmpty() -> Toast.makeText(this, "اكتب رسالة أو اختر ملف للإرسال", Toast.LENGTH_SHORT).show()
-                else -> startSending(message)
+                !hasContent -> Toast.makeText(this, "اكتب رسالة واحدة على الأقل", Toast.LENGTH_SHORT).show()
+                else -> startSending()
             }
         }
     }
 
-    private fun startSending(message: String) {
-        val contacts = selectedContacts.map { it.copy() }
+    private fun startSending() {
+        val validVariants = variants.filter { it.message.isNotBlank() || it.mediaUri != null }
         SessionManager.currentSession = SendSession(
-            contacts = contacts,
-            message = message,
+            contacts = selectedContacts.map { it.copy() },
+            variants = validVariants,
             useWhatsAppBusiness = useWhatsAppBusiness,
-            delaySeconds = selectedDelay,
-            mediaUri = selectedMediaUri?.toString(),
-            mediaType = selectedMediaType
+            delaySeconds = selectedDelay
         )
         SessionManager.currentIndex = 0
         SessionManager.isRunning = true
         SessionManager.isPaused = false
 
-        if (Settings.canDrawOverlays(this)) {
+        if (Settings.canDrawOverlays(this))
             startService(Intent(this, FloatingBubbleService::class.java))
-        }
+
         startActivity(Intent(this, ProgressActivity::class.java))
         WhatsAppAccessibilityService.instance?.sendNextMessage()
     }
