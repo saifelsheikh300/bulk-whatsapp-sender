@@ -44,7 +44,6 @@
 
             <!-- Accessibility Card -->
             <androidx.cardview.widget.CardView
-                android:id="@+id/cardAccessibility"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
@@ -55,12 +54,6 @@
                     android:orientation="horizontal"
                     android:padding="14dp"
                     android:gravity="center_vertical">
-                    <ImageView
-                        android:id="@+id/imgAccessibilityStatus"
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:src="@drawable/ic_warning"
-                        android:layout_marginEnd="10dp" />
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -69,7 +62,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="خدمة الامكانية"
+                            android:text="خدمة الإمكانية"
                             android:textColor="@color/text_primary"
                             android:textSize="14sp"
                             android:textStyle="bold"
@@ -78,7 +71,7 @@
                             android:id="@+id/tvAccessibilityStatus"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="غير مفعلة - اضغط لتفعيلها"
+                            android:text="غير مفعلة"
                             android:textColor="@color/red_error"
                             android:textSize="12sp"
                             android:fontFamily="@font/cairo" />
@@ -88,7 +81,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="40dp"
                         android:text="تفعيل"
-                        android:textSize="14sp"
+                        android:textSize="13sp"
                         android:textStyle="bold"
                         android:textColor="@color/white"
                         android:textAllCaps="false"
@@ -113,7 +106,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="تطبيق الارسال"
+                        android:text="تطبيق الإرسال"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp"
                         android:fontFamily="@font/cairo"
@@ -139,7 +132,6 @@
                                 android:src="@drawable/ic_whatsapp_logo"
                                 android:layout_marginEnd="6dp" />
                             <TextView
-                                android:id="@+id/tvWhatsAppNormal"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="واتساب عادي"
@@ -164,7 +156,6 @@
                                 android:src="@drawable/ic_whatsapp_business"
                                 android:layout_marginEnd="6dp" />
                             <TextView
-                                android:id="@+id/tvWhatsAppBusiness"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="واتساب بيزنس"
@@ -232,7 +223,7 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- Message Card -->
+            <!-- ═══ الرسائل المتعددة ═══ -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -243,105 +234,67 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="14dp">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="نص الرسالة (اختياري مع ملف)"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"
-                        android:fontFamily="@font/cairo"
-                        android:layout_marginBottom="8dp" />
-                    <EditText
-                        android:id="@+id/etMessage"
-                        android:layout_width="match_parent"
-                        android:layout_height="130dp"
-                        android:background="@drawable/bg_input"
-                        android:gravity="top|end"
-                        android:hint="اكتب رسالتك هنا..."
-                        android:inputType="textMultiLine"
-                        android:padding="12dp"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_secondary"
-                        android:textSize="14sp"
-                        android:fontFamily="@font/cairo" />
-                    <TextView
-                        android:id="@+id/tvCharCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0 حرف"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="11sp"
-                        android:fontFamily="@font/cairo"
-                        android:layout_marginTop="6dp" />
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
 
-            <!-- Media Attachment Card -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                style="@style/CardStyle">
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="14dp">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="مرفق (صورة / فيديو / صوت / ملف)"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"
-                        android:fontFamily="@font/cairo"
-                        android:layout_marginBottom="10dp" />
-
-                    <!-- Selected file name -->
-                    <TextView
-                        android:id="@+id/tvMediaName"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_input"
-                        android:padding="10dp"
-                        android:textColor="@color/green_primary"
-                        android:textSize="13sp"
-                        android:fontFamily="@font/cairo"
-                        android:layout_marginBottom="10dp"
-                        android:visibility="gone"
-                        android:singleLine="true"
-                        android:ellipsize="middle" />
-
+                    <!-- عنوان القسم -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <androidx.appcompat.widget.AppCompatButton
-                            android:id="@+id/btnPickMedia"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="6dp">
+                        <TextView
                             android:layout_width="0dp"
-                            android:layout_height="48dp"
+                            android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:layout_marginEnd="8dp"
-                            android:text="📎 إرفاق صورة / فيديو / صوت"
-                            android:textSize="13sp"
+                            android:text="🎲 الرسائل (إرسال عشوائي)"
+                            android:textColor="@color/text_primary"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/cairo" />
+                        <androidx.appcompat.widget.AppCompatButton
+                            android:id="@+id/btnAddVariant"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:text="+ إضافة رسالة"
+                            android:textSize="12sp"
                             android:textStyle="bold"
                             android:textColor="@color/white"
                             android:textAllCaps="false"
-                            android:background="@drawable/btn_orange"
-                            android:fontFamily="@font/cairo" />
-
-                        <androidx.appcompat.widget.AppCompatButton
-                            android:id="@+id/btnRemoveMedia"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:text="✕"
-                            android:textSize="16sp"
-                            android:textColor="@color/white"
-                            android:textAllCaps="false"
-                            android:background="@drawable/btn_red"
-                            android:visibility="gone" />
-
+                            android:background="@drawable/btn_green"
+                            android:fontFamily="@font/cairo"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp" />
                     </LinearLayout>
+
+                    <!-- hint -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="كل جهة اتصال ستستلم رسالة مختارة عشوائياً"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
+                        android:fontFamily="@font/cairo"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- عدد الرسائل -->
+                    <TextView
+                        android:id="@+id/tvVariantsCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/green_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/cairo"
+                        android:layout_marginBottom="10dp"
+                        android:visibility="gone" />
+
+                    <!-- container الرسائل (يتملأ ديناميكياً) -->
+                    <LinearLayout
+                        android:id="@+id/containerVariants"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -362,16 +315,11 @@
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
                         android:layout_marginBottom="10dp">
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_timer"
-                            android:layout_marginEnd="8dp" />
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="التاخير بين كل رسالة"
+                            android:text="⏱ التأخير بين كل رسالة"
                             android:textColor="@color/text_primary"
                             android:textSize="14sp"
                             android:textStyle="bold"
@@ -406,10 +354,7 @@
                             android:textColor="@color/text_secondary"
                             android:textSize="11sp"
                             android:fontFamily="@font/cairo" />
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="0dp"
-                            android:layout_weight="1" />
+                        <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1" />
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -421,7 +366,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="اقل من 7 ثواني قد يسبب حظر الحساب"
+                        android:text="⚠ أقل من 7 ثواني قد يسبب حظر الحساب"
                         android:textColor="@color/orange_warning"
                         android:textSize="12sp"
                         android:fontFamily="@font/cairo"
@@ -434,7 +379,7 @@
                 android:id="@+id/btnStart"
                 android:layout_width="match_parent"
                 android:layout_height="64dp"
-                android:text="ابدأ الإرسال"
+                android:text="🚀 ابدأ الإرسال"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:textColor="@color/white"
