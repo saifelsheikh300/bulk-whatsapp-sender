@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    app:cardBackgroundColor="#1F2C34"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <!-- Header: رقم الرسالة + زرار حذف -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/tvVariantNum"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="رسالة 1"
+                android:textColor="#25D366"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/cairo" />
+
+            <ImageButton
+                android:id="@+id/btnDeleteVariant"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="@drawable/btn_red"
+                android:src="@drawable/ic_delete"
+                android:padding="4dp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- نص الرسالة -->
+        <EditText
+            android:id="@+id/etVariantMessage"
+            android:layout_width="match_parent"
+            android:layout_height="90dp"
+            android:background="@drawable/bg_input"
+            android:gravity="top|end"
+            android:hint="نص الرسالة (اختياري مع ملف)..."
+            android:inputType="textMultiLine"
+            android:padding="10dp"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#8696A0"
+            android:textSize="13sp"
+            android:fontFamily="@font/cairo"
+            android:layout_marginBottom="8dp" />
+
+        <!-- اسم الملف المختار -->
+        <TextView
+            android:id="@+id/tvVariantMediaName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:padding="8dp"
+            android:textColor="#25D366"
+            android:textSize="12sp"
+            android:fontFamily="@font/cairo"
+            android:singleLine="true"
+            android:ellipsize="middle"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone" />
+
+        <!-- زراير الميديا -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnVariantMedia"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="📎 ملف"
+                android:textSize="12sp"
+                android:textColor="#FFFFFF"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_orange"
+                android:fontFamily="@font/cairo" />
+
+            <Button
+                android:id="@+id/btnVariantRemoveMedia"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:text="✕"
+                android:textSize="14sp"
+                android:textColor="#FFFFFF"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_red"
+                android:visibility="gone" />
+
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
