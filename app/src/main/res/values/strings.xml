@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">وتساب الطيار</string>
+    <string name="app_name">واتساب الطيار</string>
     <string name="accessibility_description">يتيح التطبيق إرسال رسائل واتساب تلقائياً</string>
     <string name="select_contacts">اختر جهات الاتصال</string>
     <string name="compose_message">اكتب الرسالة</string>
