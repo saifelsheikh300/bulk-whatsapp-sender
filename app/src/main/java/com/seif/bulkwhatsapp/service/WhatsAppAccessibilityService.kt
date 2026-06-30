@@ -99,31 +99,11 @@ class WhatsAppAccessibilityService : AccessibilityService() {
         return sendNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
 
-    // ─── إرسال ميديا: نفس فكرة trySendMessage بس بنبعت Intent share جوه الـ accessibility event ───
+    // ─── إرسال ميديا: الـ Intent بيتبعت من sendNextMessage مباشرة، هنا بس بنضغط زرار الإرسال ───
     private var mediaIntentFired = false
 
     private fun trySendMedia(root: AccessibilityNodeInfo, variant: MessageVariant, pkg: String): Boolean {
-        // أول مرة بس - أطلق الـ share intent
-        if (!mediaIntentFired) {
-            mediaIntentFired = true
-            try {
-                val uri = Uri.parse(variant.mediaUri)
-                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                    type = variant.mediaType
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    if (variant.message.isNotBlank()) putExtra(Intent.EXTRA_TEXT, variant.message)
-                    setPackage(pkg)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                startActivity(shareIntent)
-            } catch (e: Exception) {
-                mediaIntentFired = false
-            }
-            return false
-        }
-
-        // بعد كده دور على زرار الإرسال في شاشة معاينة الميديا (نفس ID زي النص أساساً)
+        // دور على زرار الإرسال في شاشة معاينة الميديا
         val sendNode = root.findAccessibilityNodeInfosByViewId("$pkg:id/send")?.firstOrNull()
             ?: root.findAccessibilityNodeInfosByViewId("$pkg:id/caption_send")?.firstOrNull()
 
@@ -154,19 +134,37 @@ class WhatsAppAccessibilityService : AccessibilityService() {
 
         val pkg = if (session.useWhatsAppBusiness) "com.whatsapp.w4b" else "com.whatsapp"
         val phone = PhoneUtils.normalizeEgyptianPhone(contact.phone)
-
-        // دايماً بنفتح الشات بنفس الطريقة الأصلية (كانت شغالة)
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("https://api.whatsapp.com/send?phone=${phone.replace("+", "")}")
-            setPackage(pkg)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
+        val variant = currentVariant!!
 
         waitingForSend = true
         messageSent = false
 
         try {
-            startActivity(intent)
+            if (variant.mediaUri != null && variant.mediaType != null) {
+                // ميديا: نبعت ACTION_SEND مباشرة مع jid عشان واتساب يحط الملف في شات الشخص ده بالظبط
+                // من غير ما يفتح شاشة اختيار جهة اتصال
+                val uri = Uri.parse(variant.mediaUri)
+                val jid = "${phone.replace("+", "")}@s.whatsapp.net"
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = variant.mediaType
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra("jid", jid)
+                    if (variant.message.isNotBlank()) putExtra(Intent.EXTRA_TEXT, variant.message)
+                    setPackage(pkg)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                mediaIntentFired = true
+                startActivity(shareIntent)
+            } else {
+                // نص: نفس الطريقة الأصلية اللي كانت شغالة بالظبط
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    data = Uri.parse("https://api.whatsapp.com/send?phone=${phone.replace("+", "")}")
+                    setPackage(pkg)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                startActivity(intent)
+            }
         } catch (e: Exception) {
             contact.sendStatus = SendStatus.FAILED
             SessionManager.currentIndex++
