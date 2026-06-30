@@ -181,8 +181,7 @@ class WhatsAppAccessibilityService : AccessibilityService() {
                 }
                 mediaIntentFired = true
                 startActivity(shareIntent)
-                // timeout للميديا كمان
-                startSkipTimeout()
+                // الميديا مش محتاجة timeout - الـ accessibility event هيمسك زرار الإرسال
             } else {
                 // نص: نفس الطريقة الأصلية اللي كانت شغالة بالظبط
                 val intent = Intent(Intent.ACTION_VIEW).apply {
