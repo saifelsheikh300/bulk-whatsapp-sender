@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.seif.bulkwhatsapp.data.MessageVariant
@@ -18,6 +19,7 @@ class WhatsAppAccessibilityService : AccessibilityService() {
     companion object {
         var instance: WhatsAppAccessibilityService? = null
         const val ACTION_UPDATE_PROGRESS = "com.seif.bulkwhatsapp.UPDATE_PROGRESS"
+        private const val TAG = "WaTayar"
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -28,8 +30,17 @@ class WhatsAppAccessibilityService : AccessibilityService() {
     private var currentVariant: MessageVariant? = null
     private var currentPkg: String = "com.whatsapp"
 
-    override fun onServiceConnected() { super.onServiceConnected(); instance = this }
-    override fun onDestroy() { super.onDestroy(); instance = null }
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        instance = this
+        Log.d(TAG, "Service CONNECTED")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        instance = null
+        Log.d(TAG, "Service DESTROYED")
+    }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (!SessionManager.isRunning || SessionManager.isPaused) return
@@ -42,59 +53,69 @@ class WhatsAppAccessibilityService : AccessibilityService() {
 
         val root = rootInActiveWindow ?: return
 
-        when {
-            // وضع النص: نكتب ونبعت
-            waitingForSend -> {
-                val msg = currentVariant?.message ?: return
-                if (trySendTextMessage(root, msg)) {
-                    messageSent = true
-                    waitingForSend = false
-                    markSentAndNext()
-                }
+        if (waitingForSend) {
+            val msg = currentVariant?.message ?: return
+            Log.d(TAG, "Trying to send text...")
+            if (trySendTextMessage(root, msg)) {
+                Log.d(TAG, "Text SENT successfully")
+                messageSent = true
+                waitingForSend = false
+                markSentAndNext()
             }
-
-            // وضع الميديا: نضغط زرار الإرسال بعد ما الملف اتحط
-            waitingForMediaSend -> {
-                if (tryClickSendButton(root)) {
-                    messageSent = true
-                    waitingForMediaSend = false
-                    markSentAndNext()
-                }
+        } else if (waitingForMediaSend) {
+            Log.d(TAG, "Trying to click send button for media...")
+            if (tryClickSendButton(root)) {
+                Log.d(TAG, "Media SENT successfully")
+                messageSent = true
+                waitingForMediaSend = false
+                markSentAndNext()
             }
         }
     }
 
     private fun trySendTextMessage(root: AccessibilityNodeInfo, message: String): Boolean {
-        // لازم الشات يكون مفتوح - نشوف entry box
         val inputNode = root.findAccessibilityNodeInfosByViewId("$currentPkg:id/entry")
-            ?.firstOrNull() ?: return false
+            ?.firstOrNull()
+        if (inputNode == null) {
+            Log.d(TAG, "entry box NOT found yet")
+            return false
+        }
 
         val args = Bundle()
         args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, message)
-        inputNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+        val setOk = inputNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+        Log.d(TAG, "Set text result: $setOk")
 
         Thread.sleep(400)
 
-        val sendNode = root.findAccessibilityNodeInfosByViewId("$currentPkg:id/send")
-            ?.firstOrNull() ?: return false
-        return sendNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        val freshRoot = rootInActiveWindow ?: root
+        val sendNode = freshRoot.findAccessibilityNodeInfosByViewId("$currentPkg:id/send")
+            ?.firstOrNull()
+        if (sendNode == null) {
+            Log.d(TAG, "send button NOT found")
+            return false
+        }
+        val clickOk = sendNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        Log.d(TAG, "Click send result: $clickOk")
+        return clickOk
     }
 
     private fun tryClickSendButton(root: AccessibilityNodeInfo): Boolean {
-        // IDs محتملة في شاشة preview الميديا
         val ids = listOf(
             "$currentPkg:id/send",
             "$currentPkg:id/caption_send",
             "$currentPkg:id/send_btn",
-            "$currentPkg:id/action_send"
+            "$currentPkg:id/action_send",
+            "$currentPkg:id/fab"
         )
         for (id in ids) {
             val node = root.findAccessibilityNodeInfosByViewId(id)?.firstOrNull()
             if (node != null && node.isClickable) {
+                Log.d(TAG, "Found send button by id: $id")
                 return node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
             }
         }
-        // fallback: دور بـ contentDescription
+        Log.d(TAG, "Send button not found by ID, trying description search...")
         return searchClickable(root, listOf("send", "إرسال", "ارسال"))
     }
 
@@ -136,8 +157,15 @@ class WhatsAppAccessibilityService : AccessibilityService() {
     }
 
     fun sendNextMessage() {
-        val session = SessionManager.currentSession ?: return
-        if (SessionManager.isPaused || !SessionManager.isRunning) return
+        val session = SessionManager.currentSession
+        if (session == null) {
+            Log.e(TAG, "sendNextMessage: NO SESSION!")
+            return
+        }
+        if (SessionManager.isPaused || !SessionManager.isRunning) {
+            Log.d(TAG, "sendNextMessage: paused or not running")
+            return
+        }
         if (SessionManager.currentIndex >= session.contacts.size) { finishSession(); return }
 
         val contact = session.contacts[SessionManager.currentIndex]
@@ -154,6 +182,8 @@ class WhatsAppAccessibilityService : AccessibilityService() {
         currentPkg = if (session.useWhatsAppBusiness) "com.whatsapp.w4b" else "com.whatsapp"
         val phone = PhoneUtils.normalizeEgyptianPhone(contact.phone).replace("+", "")
 
+        Log.d(TAG, "Sending to: ${contact.name} ($phone), hasMedia=${variant.mediaUri != null}")
+
         try {
             if (variant.mediaUri != null && variant.mediaType != null) {
                 sendMedia(phone, variant)
@@ -161,6 +191,7 @@ class WhatsAppAccessibilityService : AccessibilityService() {
                 sendText(phone)
             }
         } catch (e: Exception) {
+            Log.e(TAG, "Exception in sendNextMessage", e)
             contact.sendStatus = SendStatus.FAILED
             SessionManager.currentIndex++
             sendBroadcast(Intent(ACTION_UPDATE_PROGRESS))
@@ -169,31 +200,51 @@ class WhatsAppAccessibilityService : AccessibilityService() {
     }
 
     private fun sendText(phone: String) {
-        // whatsapp://send?phone=xxx - بيفتح الشات مباشرة بدون شاشة اختيار
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("whatsapp://send?phone=$phone")
+            data = Uri.parse("https://api.whatsapp.com/send?phone=$phone")
             setPackage(currentPkg)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         waitingForSend = true
+        Log.d(TAG, "Opening chat for text: $phone")
         startActivity(intent)
     }
 
     private fun sendMedia(phone: String, variant: MessageVariant) {
-        val uri = Uri.parse(variant.mediaUri)
-
-        // whatsapp://send?phone=xxx مع الملف - بيفتح الشات مباشرة
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = variant.mediaType
-            putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra("jid", "${phone}@s.whatsapp.net")  // بيحدد الشخص مباشرة
-            if (variant.message.isNotBlank()) putExtra(Intent.EXTRA_TEXT, variant.message)
+        // الخطوة 1: افتح الشات الأول عشان واتساب يحدد المحادثة الحالية
+        val chatIntent = Intent(Intent.ACTION_VIEW).apply {
+            data = Uri.parse("https://api.whatsapp.com/send?phone=$phone")
             setPackage(currentPkg)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        waitingForMediaSend = true
-        startActivity(intent)
+        Log.d(TAG, "Opening chat before media: $phone")
+        startActivity(chatIntent)
+
+        // الخطوة 2: بعد فترة كافية (شات اتفتح فعلاً) ابعت الميديا لنفس الشات المفتوح
+        handler.postDelayed({
+            try {
+                val uri = Uri.parse(variant.mediaUri)
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = variant.mediaType
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    if (variant.message.isNotBlank()) putExtra(Intent.EXTRA_TEXT, variant.message)
+                    setPackage(currentPkg)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                waitingForMediaSend = true
+                Log.d(TAG, "Sending media share intent")
+                startActivity(shareIntent)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to send media", e)
+                val session = SessionManager.currentSession
+                val contact = session?.contacts?.getOrNull(SessionManager.currentIndex)
+                contact?.sendStatus = SendStatus.FAILED
+                SessionManager.currentIndex++
+                sendBroadcast(Intent(ACTION_UPDATE_PROGRESS))
+                handler.postDelayed({ sendNextMessage() }, 1500)
+            }
+        }, 3000) // 3 ثواني كفاية عشان الشات يفتح بالكامل
     }
 
     fun pause() {
