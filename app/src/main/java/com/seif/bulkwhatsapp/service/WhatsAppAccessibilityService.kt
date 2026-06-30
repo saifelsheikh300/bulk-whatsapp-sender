@@ -25,6 +25,7 @@ class WhatsAppAccessibilityService : AccessibilityService() {
     private var waitingForSend = false
     private var messageSent = false
     private var pendingRunnable: Runnable? = null
+    private var skipRunnable: Runnable? = null   // timeout لو مفيش واتساب على الرقم
     private var currentVariant: MessageVariant? = null
 
     override fun onServiceConnected() {
@@ -68,6 +69,9 @@ class WhatsAppAccessibilityService : AccessibilityService() {
     }
 
     private fun onMessageSentSuccessfully(session: com.seif.bulkwhatsapp.data.SendSession) {
+        // إلغاء الـ timeout لأن الرسالة اتبعتت بنجاح
+        skipRunnable?.let { handler.removeCallbacks(it) }
+        skipRunnable = null
         session.contacts[SessionManager.currentIndex].sendStatus = SendStatus.SENT
         sendProgressBroadcast()
 
@@ -113,6 +117,27 @@ class WhatsAppAccessibilityService : AccessibilityService() {
         return false
     }
 
+    // ── Timeout: لو مفيش واتساب على الرقم، الشات مش هيفتح → skip بعد 8 ثواني ──
+    private fun startSkipTimeout() {
+        skipRunnable?.let { handler.removeCallbacks(it) }
+        val r = Runnable {
+            if (waitingForSend && !messageSent) {
+                val session = SessionManager.currentSession ?: return@Runnable
+                val contact = session.contacts.getOrNull(SessionManager.currentIndex) ?: return@Runnable
+                contact.sendStatus = SendStatus.FAILED  // مفيش واتساب
+                waitingForSend = false
+                messageSent = false
+                currentVariant = null
+                SessionManager.currentIndex++
+                sendProgressBroadcast()
+                if (SessionManager.currentIndex < session.contacts.size) sendNextMessage()
+                else finishSession()
+            }
+        }
+        skipRunnable = r
+        handler.postDelayed(r, 8000) // 8 ثواني timeout
+    }
+
     fun sendNextMessage() {
         val session = SessionManager.currentSession ?: return
         if (SessionManager.isPaused || !SessionManager.isRunning) return
@@ -156,6 +181,8 @@ class WhatsAppAccessibilityService : AccessibilityService() {
                 }
                 mediaIntentFired = true
                 startActivity(shareIntent)
+                // timeout للميديا كمان
+                startSkipTimeout()
             } else {
                 // نص: نفس الطريقة الأصلية اللي كانت شغالة بالظبط
                 val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -164,6 +191,8 @@ class WhatsAppAccessibilityService : AccessibilityService() {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
                 startActivity(intent)
+                // لو خلال 8 ثواني الشات مفتحش = مفيش واتساب على الرقم ده → skip
+                startSkipTimeout()
             }
         } catch (e: Exception) {
             contact.sendStatus = SendStatus.FAILED
@@ -177,6 +206,8 @@ class WhatsAppAccessibilityService : AccessibilityService() {
         SessionManager.isPaused = true
         pendingRunnable?.let { handler.removeCallbacks(it) }
         pendingRunnable = null
+        skipRunnable?.let { handler.removeCallbacks(it) }
+        skipRunnable = null
         waitingForSend = false
         sendProgressBroadcast()
     }
@@ -196,6 +227,8 @@ class WhatsAppAccessibilityService : AccessibilityService() {
         SessionManager.isPaused = false
         pendingRunnable?.let { handler.removeCallbacks(it) }
         pendingRunnable = null
+        skipRunnable?.let { handler.removeCallbacks(it) }
+        skipRunnable = null
         waitingForSend = false
         val i = Intent(ACTION_UPDATE_PROGRESS)
         i.putExtra("finished", true)
