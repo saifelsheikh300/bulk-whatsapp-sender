@@ -118,13 +118,13 @@ class WhatsAppAccessibilityService : AccessibilityService() {
     }
 
     // ── Timeout: لو مفيش واتساب على الرقم، الشات مش هيفتح → skip بعد 8 ثواني ──
-    private fun startSkipTimeout() {
+    private fun startSkipTimeout(ms: Long = 8000) {
         skipRunnable?.let { handler.removeCallbacks(it) }
         val r = Runnable {
             if (waitingForSend && !messageSent) {
                 val session = SessionManager.currentSession ?: return@Runnable
                 val contact = session.contacts.getOrNull(SessionManager.currentIndex) ?: return@Runnable
-                contact.sendStatus = SendStatus.FAILED  // مفيش واتساب
+                contact.sendStatus = SendStatus.FAILED
                 waitingForSend = false
                 messageSent = false
                 currentVariant = null
@@ -135,7 +135,7 @@ class WhatsAppAccessibilityService : AccessibilityService() {
             }
         }
         skipRunnable = r
-        handler.postDelayed(r, 8000) // 8 ثواني timeout
+        handler.postDelayed(r, ms)
     }
 
     fun sendNextMessage() {
@@ -181,7 +181,7 @@ class WhatsAppAccessibilityService : AccessibilityService() {
                 }
                 mediaIntentFired = true
                 startActivity(shareIntent)
-                // الميديا مش محتاجة timeout - الـ accessibility event هيمسك زرار الإرسال
+                startSkipTimeout(15000)
             } else {
                 // نص: نفس الطريقة الأصلية اللي كانت شغالة بالظبط
                 val intent = Intent(Intent.ACTION_VIEW).apply {
