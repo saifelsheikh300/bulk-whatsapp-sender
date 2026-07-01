@@ -22,12 +22,14 @@ class WhatsAppAccessibilityService : AccessibilityService() {
     }
 
     private val handler = Handler(Looper.getMainLooper())
-    private var waitingForSend = false      // نص: منتظر الشات يفتح
-    private var waitingForMedia = false     // ميديا: منتظر شاشة المعاينة
+    private var state = State.IDLE
     private var messageSent = false
     private var pendingRunnable: Runnable? = null
     private var skipRunnable: Runnable? = null
     private var currentVariant: MessageVariant? = null
+    private var currentPkg = "com.whatsapp"
+
+    enum class State { IDLE, WAITING_TEXT, WAITING_MEDIA_SEND }
 
     override fun onServiceConnected() { super.onServiceConnected(); instance = this }
     override fun onDestroy() { super.onDestroy(); instance = null }
@@ -39,59 +41,54 @@ class WhatsAppAccessibilityService : AccessibilityService() {
         if (messageSent) return
 
         val pkg = event?.packageName?.toString() ?: return
-        val expected = if (session.useWhatsAppBusiness) "com.whatsapp.w4b" else "com.whatsapp"
-        if (pkg != expected) return
+        if (pkg != currentPkg) return
 
         val root = rootInActiveWindow ?: return
 
-        // ─── وضع النص: نفس منطق الأصل بالظبط ───
-        if (waitingForSend) {
-            val msg = currentVariant?.message ?: return
-            if (trySendMessage(root, msg, expected)) {
-                cancelSkip()
-                messageSent = true
-                waitingForSend = false
-                markSentAndNext()
+        when (state) {
+
+            State.WAITING_TEXT -> {
+                // ─── نفس منطق الأصل بالظبط ───
+                val msg = currentVariant?.message ?: return
+                val inputNode = root.findAccessibilityNodeInfosByViewId("$currentPkg:id/entry")
+                    ?.firstOrNull() ?: return
+                val args = Bundle()
+                args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, msg)
+                inputNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+                val sendNode = root.findAccessibilityNodeInfosByViewId("$currentPkg:id/send")
+                    ?.firstOrNull() ?: return
+                if (sendNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                    cancelSkip()
+                    messageSent = true
+                    state = State.IDLE
+                    markSentAndNext()
+                }
             }
-            return
-        }
 
-        // ─── وضع الميديا: دور على زرار الإرسال في شاشة المعاينة ───
-        if (waitingForMedia) {
-            if (tryClickSend(root, expected)) {
-                cancelSkip()
-                messageSent = true
-                waitingForMedia = false
-                markSentAndNext()
+            State.WAITING_MEDIA_SEND -> {
+                // دور على زرار الإرسال في شاشة معاينة الميديا
+                for (id in listOf("$currentPkg:id/send", "$currentPkg:id/caption_send")) {
+                    val node = root.findAccessibilityNodeInfosByViewId(id)?.firstOrNull()
+                    if (node != null && node.isClickable) {
+                        if (node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                            cancelSkip()
+                            messageSent = true
+                            state = State.IDLE
+                            markSentAndNext()
+                            return
+                        }
+                    }
+                }
             }
-        }
-    }
 
-    // ─── نفس الكود الأصلي بالظبط ───
-    private fun trySendMessage(root: AccessibilityNodeInfo, message: String, pkg: String): Boolean {
-        val inputNode = root.findAccessibilityNodeInfosByViewId("$pkg:id/entry")
-            ?.firstOrNull() ?: return false
-        val args = Bundle()
-        args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, message)
-        inputNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
-        val sendNode = root.findAccessibilityNodeInfosByViewId("$pkg:id/send")
-            ?.firstOrNull() ?: return false
-        return sendNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-    }
-
-    private fun tryClickSend(root: AccessibilityNodeInfo, pkg: String): Boolean {
-        for (id in listOf("$pkg:id/send", "$pkg:id/caption_send")) {
-            val node = root.findAccessibilityNodeInfosByViewId(id)?.firstOrNull()
-            if (node != null && node.isClickable)
-                return node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+            else -> {}
         }
-        return false
     }
 
     private fun markSentAndNext() {
         val session = SessionManager.currentSession ?: return
         session.contacts[SessionManager.currentIndex].sendStatus = SendStatus.SENT
-        sendProgressBroadcast()
+        sendBroadcast(Intent(ACTION_UPDATE_PROGRESS))
         val delay = session.delaySeconds * 1000L
         val r = Runnable {
             if (!SessionManager.isPaused && SessionManager.isRunning) {
@@ -106,26 +103,22 @@ class WhatsAppAccessibilityService : AccessibilityService() {
         handler.postDelayed(r, delay)
     }
 
-    // ─── Skip: لو مفيش واتساب على الرقم ───
     private fun startSkip(ms: Long) {
         cancelSkip()
-        val r = Runnable {
+        skipRunnable = Runnable {
             if (!messageSent) {
                 val session = SessionManager.currentSession ?: return@Runnable
                 val contact = session.contacts.getOrNull(SessionManager.currentIndex) ?: return@Runnable
                 contact.sendStatus = SendStatus.FAILED
-                waitingForSend = false
-                waitingForMedia = false
+                state = State.IDLE
                 messageSent = false
                 currentVariant = null
                 SessionManager.currentIndex++
-                sendProgressBroadcast()
+                sendBroadcast(Intent(ACTION_UPDATE_PROGRESS))
                 if (SessionManager.currentIndex < session.contacts.size) sendNextMessage()
                 else finishSession()
             }
-        }
-        skipRunnable = r
-        handler.postDelayed(r, ms)
+        }.also { handler.postDelayed(it, ms) }
     }
 
     private fun cancelSkip() {
@@ -143,68 +136,53 @@ class WhatsAppAccessibilityService : AccessibilityService() {
             SessionManager.currentIndex++; sendNextMessage(); return
         }
 
-        // اختار رسالة عشوائية
         val variant = session.pickVariant()
         currentVariant = variant
         contact.sendStatus = SendStatus.SENDING
         messageSent = false
-        waitingForSend = false
-        waitingForMedia = false
-        sendProgressBroadcast()
+        state = State.IDLE
+        sendBroadcast(Intent(ACTION_UPDATE_PROGRESS))
 
-        val pkg = if (session.useWhatsAppBusiness) "com.whatsapp.w4b" else "com.whatsapp"
-        val phone = PhoneUtils.normalizeEgyptianPhone(contact.phone)
-
-        // فتح الشات دايماً بنفس طريقة الأصل
-        val chatIntent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("https://api.whatsapp.com/send?phone=${phone.replace("+", "")}")
-            setPackage(pkg)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
+        currentPkg = if (session.useWhatsAppBusiness) "com.whatsapp.w4b" else "com.whatsapp"
+        val phone = PhoneUtils.normalizeEgyptianPhone(contact.phone).replace("+", "")
 
         try {
-            startActivity(chatIntent)
-
             if (variant.mediaUri != null && variant.mediaType != null) {
-                // ميديا: استنى 2.5 ثانية عشان الشات يفتح، بعدين ابعت الملف
-                // لو مفيش واتساب على الرقم → skip بعد 10 ثواني
-                startSkip(10000)
-                handler.postDelayed({
-                    if (!messageSent) {
-                        try {
-                            val uri = Uri.parse(variant.mediaUri)
-                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                type = variant.mediaType
-                                putExtra(Intent.EXTRA_STREAM, uri)
-                                if (variant.message.isNotBlank())
-                                    putExtra(Intent.EXTRA_TEXT, variant.message)
-                                setPackage(pkg)
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-                            waitingForMedia = true
-                            startActivity(shareIntent)
-                        } catch (e: Exception) {
-                            cancelSkip()
-                            contact.sendStatus = SendStatus.FAILED
-                            SessionManager.currentIndex++
-                            sendProgressBroadcast()
-                            handler.postDelayed({ sendNextMessage() }, 1000)
-                        }
-                    }
-                }, 2500)
+                // ─── ميديا ───
+                // بنبعت ACTION_SEND مع jid مباشرة - ده بيفتح شاشة معاينة الملف
+                // في شات الشخص ده مباشرة بدون شاشة "إرسال إلى..."
+                val uri = Uri.parse(variant.mediaUri)
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = variant.mediaType
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra("jid", "$phone@s.whatsapp.net")
+                    setPackage(currentPkg)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                state = State.WAITING_MEDIA_SEND
+                // skip لو مفيش واتساب: 8 ثواني
+                startSkip(8000)
+                startActivity(shareIntent)
 
             } else {
-                // نص: نفس منطق الأصل بالظبط + skip لو مفيش واتساب
-                waitingForSend = true
+                // ─── نص فقط: نفس منطق الأصل بالظبط ───
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    data = Uri.parse("https://api.whatsapp.com/send?phone=$phone")
+                    setPackage(currentPkg)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                state = State.WAITING_TEXT
+                // skip لو مفيش واتساب: 8 ثواني
                 startSkip(8000)
+                startActivity(intent)
             }
 
         } catch (e: Exception) {
             cancelSkip()
             contact.sendStatus = SendStatus.FAILED
             SessionManager.currentIndex++
-            sendProgressBroadcast()
+            sendBroadcast(Intent(ACTION_UPDATE_PROGRESS))
             handler.postDelayed({ sendNextMessage() }, 1000)
         }
     }
@@ -214,9 +192,8 @@ class WhatsAppAccessibilityService : AccessibilityService() {
         pendingRunnable?.let { handler.removeCallbacks(it) }
         pendingRunnable = null
         cancelSkip()
-        waitingForSend = false
-        waitingForMedia = false
-        sendProgressBroadcast()
+        state = State.IDLE
+        sendBroadcast(Intent(ACTION_UPDATE_PROGRESS))
     }
 
     fun resume() {
@@ -233,15 +210,10 @@ class WhatsAppAccessibilityService : AccessibilityService() {
         pendingRunnable?.let { handler.removeCallbacks(it) }
         pendingRunnable = null
         cancelSkip()
-        waitingForSend = false
-        waitingForMedia = false
+        state = State.IDLE
         val i = Intent(ACTION_UPDATE_PROGRESS)
         i.putExtra("finished", true)
         sendBroadcast(i)
-    }
-
-    private fun sendProgressBroadcast() {
-        sendBroadcast(Intent(ACTION_UPDATE_PROGRESS))
     }
 
     private fun finishSession() {
