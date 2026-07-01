@@ -27,7 +27,9 @@ object SessionManager {
     var isPaused: Boolean = false
 
     val sentCount get() = currentSession?.contacts?.count { it.sendStatus == SendStatus.SENT } ?: 0
-    val totalCount get() = currentSession?.contacts?.size ?: 0
+    val failedCount get() = currentSession?.contacts?.count { it.sendStatus == SendStatus.FAILED } ?: 0
+    // العدد الكلي = الكل ناقص اللي مفيهومش واتساب (FAILED)
+    val totalCount get() = (currentSession?.contacts?.size ?: 0) - failedCount
     val remainingCount get() = totalCount - sentCount
     val progressPercent get() = if (totalCount > 0) (sentCount * 100 / totalCount) else 0
 }
