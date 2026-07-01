@@ -29,7 +29,7 @@ class WhatsAppAccessibilityService : AccessibilityService() {
     private var currentVariant: MessageVariant? = null
     private var currentPkg = "com.whatsapp"
 
-    enum class State { IDLE, WAITING_TEXT, WAITING_MEDIA_SEND }
+    enum class State { IDLE, WAITING_TEXT, WAITING_MEDIA_SEND, WAITING_MEDIA_CLICK }
 
     override fun onServiceConnected() { super.onServiceConnected(); instance = this }
     override fun onDestroy() { super.onDestroy(); instance = null }
@@ -67,35 +67,43 @@ class WhatsAppAccessibilityService : AccessibilityService() {
 
             State.WAITING_MEDIA_SEND -> {
                 val caption = currentVariant?.message ?: ""
-
-                // دور على أي EditText في الشاشة دي (حقل الـ caption)
-                // واتساب بيستخدم IDs مختلفة حسب الإصدار
                 if (caption.isNotBlank()) {
+                    // دور على حقل الـ caption واكتب فيه
                     val captionNode = findEditText(root)
                     if (captionNode != null) {
                         val currentText = captionNode.text?.toString() ?: ""
                         if (currentText != caption) {
-                            // اكتب النص
                             val args = Bundle()
                             args.putCharSequence(
                                 AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
                                 caption
                             )
                             captionNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
-                            // ما نرجعش، نكمل نضغط إرسال في نفس الـ event
+                            // انتقل لـ state جديد عشان نضغط إرسال في event تاني
+                            // (واتساب محتاج لحظة بعد الكتابة)
+                            state = State.WAITING_MEDIA_CLICK
+                            return
                         }
                     }
                 }
-
-                // دور على زرار الإرسال بكل الطرق المتاحة
+                // لو مفيش caption، اضغط إرسال على طول
                 val sendNode = findSendButton(root)
-                if (sendNode != null) {
-                    if (sendNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
-                        cancelSkip()
-                        messageSent = true
-                        state = State.IDLE
-                        markSentAndNext()
-                    }
+                if (sendNode != null && sendNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                    cancelSkip()
+                    messageSent = true
+                    state = State.IDLE
+                    markSentAndNext()
+                }
+            }
+
+            State.WAITING_MEDIA_CLICK -> {
+                // النص اتكتب، دلوقتي اضغط زرار الإرسال
+                val sendNode = findSendButton(root)
+                if (sendNode != null && sendNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                    cancelSkip()
+                    messageSent = true
+                    state = State.IDLE
+                    markSentAndNext()
                 }
             }
 
