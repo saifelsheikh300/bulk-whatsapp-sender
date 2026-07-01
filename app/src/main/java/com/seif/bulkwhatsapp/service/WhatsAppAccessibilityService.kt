@@ -102,10 +102,17 @@ class WhatsAppAccessibilityService : AccessibilityService() {
             State.WAITING_MEDIA -> {
                 val sendNode = findSendButton(root)
                 if (sendNode != null && sendNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
-                    cancelSkip()
-                    messageSent = true
-                    state = State.IDLE
-                    markSentAndNext()
+                    val hasText = currentVariant?.message?.isNotBlank() == true
+                    if (!hasText) {
+                        // ميديا بدون نص: خلاص
+                        cancelSkip()
+                        messageSent = true
+                        state = State.IDLE
+                        markSentAndNext()
+                    } else {
+                        // ميديا + نص: الصورة اتبعتت، دلوقتي استنى النص يتبعت
+                        state = State.WAITING_TEXT
+                    }
                 }
             }
 
@@ -243,11 +250,27 @@ class WhatsAppAccessibilityService : AccessibilityService() {
                     startActivity(shareIntent)
                 }
 
-                // ─── نص + ميديا: نبعت النص الأول في الشات، بعدين الميديا ───
+                // ─── نص + ميديا: الصورة الأول، بعدين النص ───
                 hasMedia && hasText -> {
-                    state = State.WAITING_TEXT_SEND
+                    val uri = Uri.parse(variant.mediaUri)
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = variant.mediaType
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        putExtra("jid", "$currentPhone@s.whatsapp.net")
+                        setPackage(currentPkg)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    state = State.WAITING_MEDIA
                     startSkip(15000)
-                    startActivity(chatIntent)
+                    startActivity(shareIntent)
+                    // بعد ما الصورة تتبعت، ابعت النص
+                    handler.postDelayed({
+                        if (!messageSent) {
+                            state = State.WAITING_TEXT
+                            startActivity(chatIntent)
+                        }
+                    }, 4000)
                 }
 
                 // ─── نص فقط: نفس الأصل ───
