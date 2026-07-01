@@ -66,43 +66,35 @@ class WhatsAppAccessibilityService : AccessibilityService() {
             }
 
             State.WAITING_MEDIA_SEND -> {
-                // لو فيه نص → اكتبه في حقل الـ caption الأول قبل الإرسال
                 val caption = currentVariant?.message ?: ""
+
+                // دور على أي EditText في الشاشة دي (حقل الـ caption)
+                // واتساب بيستخدم IDs مختلفة حسب الإصدار
                 if (caption.isNotBlank()) {
-                    // دور على حقل الـ caption (واتساب بيسميه entry أو caption)
-                    val captionIds = listOf(
-                        "$currentPkg:id/caption",
-                        "$currentPkg:id/entry"
-                    )
-                    for (cId in captionIds) {
-                        val captionNode = root.findAccessibilityNodeInfosByViewId(cId)?.firstOrNull()
-                        if (captionNode != null && captionNode.isEditable) {
-                            val currentText = captionNode.text?.toString() ?: ""
-                            if (currentText.isEmpty()) {
-                                // اكتب النص في حقل الـ caption
-                                val args = Bundle()
-                                args.putCharSequence(
-                                    AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
-                                    caption
-                                )
-                                captionNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
-                                return // استنى الـ event الجاي عشان يضغط إرسال
-                            }
-                            break
+                    val captionNode = findEditText(root)
+                    if (captionNode != null) {
+                        val currentText = captionNode.text?.toString() ?: ""
+                        if (currentText != caption) {
+                            // اكتب النص
+                            val args = Bundle()
+                            args.putCharSequence(
+                                AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+                                caption
+                            )
+                            captionNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+                            // ما نرجعش، نكمل نضغط إرسال في نفس الـ event
                         }
                     }
                 }
-                // دور على زرار الإرسال في شاشة معاينة الميديا
-                for (id in listOf("$currentPkg:id/send", "$currentPkg:id/caption_send")) {
-                    val node = root.findAccessibilityNodeInfosByViewId(id)?.firstOrNull()
-                    if (node != null && node.isClickable) {
-                        if (node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
-                            cancelSkip()
-                            messageSent = true
-                            state = State.IDLE
-                            markSentAndNext()
-                            return
-                        }
+
+                // دور على زرار الإرسال بكل الطرق المتاحة
+                val sendNode = findSendButton(root)
+                if (sendNode != null) {
+                    if (sendNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                        cancelSkip()
+                        messageSent = true
+                        state = State.IDLE
+                        markSentAndNext()
                     }
                 }
             }
@@ -150,6 +142,41 @@ class WhatsAppAccessibilityService : AccessibilityService() {
     private fun cancelSkip() {
         skipRunnable?.let { handler.removeCallbacks(it) }
         skipRunnable = null
+    }
+
+    // دور على أي EditText في الشاشة (حقل الـ caption)
+    private fun findEditText(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        if (node.className?.toString() == "android.widget.EditText" && node.isEditable) return node
+        for (i in 0 until node.childCount) {
+            val result = findEditText(node.getChild(i) ?: continue)
+            if (result != null) return result
+        }
+        return null
+    }
+
+    // دور على زرار الإرسال بكل الطرق
+    private fun findSendButton(root: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        // أولاً بالـ IDs المعروفة
+        for (id in listOf(
+            "$currentPkg:id/send",
+            "$currentPkg:id/caption_send",
+            "$currentPkg:id/send_btn"
+        )) {
+            val node = root.findAccessibilityNodeInfosByViewId(id)?.firstOrNull()
+            if (node != null && node.isClickable) return node
+        }
+        // ثانياً بالـ contentDescription
+        return findClickableByDesc(root, listOf("send", "إرسال", "ارسال"))
+    }
+
+    private fun findClickableByDesc(node: AccessibilityNodeInfo, keywords: List<String>): AccessibilityNodeInfo? {
+        val desc = node.contentDescription?.toString()?.lowercase() ?: ""
+        if (node.isClickable && keywords.any { desc.contains(it) }) return node
+        for (i in 0 until node.childCount) {
+            val result = findClickableByDesc(node.getChild(i) ?: continue, keywords)
+            if (result != null) return result
+        }
+        return null
     }
 
     fun sendNextMessage() {
