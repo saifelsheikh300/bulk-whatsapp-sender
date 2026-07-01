@@ -66,6 +66,32 @@ class WhatsAppAccessibilityService : AccessibilityService() {
             }
 
             State.WAITING_MEDIA_SEND -> {
+                // لو فيه نص → اكتبه في حقل الـ caption الأول قبل الإرسال
+                val caption = currentVariant?.message ?: ""
+                if (caption.isNotBlank()) {
+                    // دور على حقل الـ caption (واتساب بيسميه entry أو caption)
+                    val captionIds = listOf(
+                        "$currentPkg:id/caption",
+                        "$currentPkg:id/entry"
+                    )
+                    for (cId in captionIds) {
+                        val captionNode = root.findAccessibilityNodeInfosByViewId(cId)?.firstOrNull()
+                        if (captionNode != null && captionNode.isEditable) {
+                            val currentText = captionNode.text?.toString() ?: ""
+                            if (currentText.isEmpty()) {
+                                // اكتب النص في حقل الـ caption
+                                val args = Bundle()
+                                args.putCharSequence(
+                                    AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+                                    caption
+                                )
+                                captionNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+                                return // استنى الـ event الجاي عشان يضغط إرسال
+                            }
+                            break
+                        }
+                    }
+                }
                 // دور على زرار الإرسال في شاشة معاينة الميديا
                 for (id in listOf("$currentPkg:id/send", "$currentPkg:id/caption_send")) {
                     val node = root.findAccessibilityNodeInfosByViewId(id)?.firstOrNull()
